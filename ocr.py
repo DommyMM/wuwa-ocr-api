@@ -101,7 +101,6 @@ def clean_text(text):
                 if len(word) > 2)
 
 def upscale_image(image):
-    """Upscale image by using cubic interpolation"""
     return cv2.resize(image, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
 
 def process_image(image):
@@ -219,7 +218,6 @@ def determine_type(text):
     return "unknown"
 
 def get_character_info(text):
-    """Extract character name, level and UID from OCR text"""
     global ORIGINAL_IMAGE
     text = text.replace(':', '').replace('.',' ').replace('  ', ' ')
     
@@ -282,7 +280,6 @@ def get_character_info(text):
     }
     
 def detect_rover_gender():
-    """Detect Rover's gender based on dark clothing colors"""
     global ORIGINAL_IMAGE
     
     regions = {
@@ -318,7 +315,6 @@ def detect_rover_gender():
     return " (M)" if sum(male_matches) >= 2 else " (F)"
 
 def get_weapon_info(text):
-    """Extract weapon info from OCR text"""
     lines = text.split('\n')
     if not lines:
         return {'name': None, 'weaponType': None, 'weaponLevel': None, 'rank': None}
@@ -564,11 +560,6 @@ def get_element_info(element_img):
     sorted_elements = sorted(ratios.items(), key=lambda x: x[1], reverse=True)
     highest = sorted_elements[0]
     second = sorted_elements[1] if len(sorted_elements) > 1 else None
-    
-    print(f"\nElement Detection Ratios:")
-    print(f"Highest: {highest[0]} - {highest[1]:.2f}%")
-    if second:
-        print(f"Second: {second[0]} - {second[1]:.2f}%")
     
     if highest[1] > 33:
         if second and second[1] > 30:
