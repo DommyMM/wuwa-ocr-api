@@ -366,7 +366,7 @@ def get_weapon_info(text):
         'type': 'Weapon', 
         'name': name,
         'weaponType': weapon_type,
-        'weaponLevel': level[0] if level else None,
+        'weaponLevel': level[0] if level else '90',
         'rank': rank
     }
 
@@ -603,7 +603,7 @@ def get_echo_info(processed_image, element):
         sub_text = pytesseract.image_to_string(sub_img).strip().replace('\n', ' ')
         
         if sub_text:
-            if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s]*)?$', sub_text):
+            if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
                 name, value = match.groups()
                 name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
                 name = name.replace('.', '')\
@@ -623,6 +623,10 @@ def get_echo_info(processed_image, element):
                         .replace(',', '')\
                         .replace('~~', '')\
                         .replace('oo', '')\
+                        .replace(' *', '')\
+                        .replace('*', '')\
+                        .replace(' ~', '')\
+                        .replace('~', '')\
                         .strip()
                 name = name if name else "HP"
                 sub_stats.append({'name': name, 'value': value.strip()})
