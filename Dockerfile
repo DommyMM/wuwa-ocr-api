@@ -39,43 +39,43 @@ RUN git clone https://github.com/tesseract-ocr/tesseract.git && \
 
 RUN mkdir -p /usr/local/share/tessdata
 RUN wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_sim.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/chi_sim.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_sim_vert.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/chi_sim_vert.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_tra.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/chi_tra.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_tra_vert.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/chi_tra_vert.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/deu.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/deu.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/enm.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/enm.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/equ.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/equ.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/fil.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/fil.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/fra.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/fra.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/hin.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/hin.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/jpn.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/jpn.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/jpn_vert.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/jpn_vert.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/mya.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/mya.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/osd.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/osd.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/rus.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/rus.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/spa.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/tha.traineddata && \
+    https://github.com/tesseract-ocr/tessdata/raw/main/tha.traineddata && \
     wget -P /usr/local/share/tessdata \
-    https://github.com/tesseract-ocr/tessdata_best/raw/main/vie.traineddata
+    https://github.com/tesseract-ocr/tessdata/raw/main/vie.traineddata
 
 ENV TESSDATA_PREFIX=/usr/local/share/tessdata
 
