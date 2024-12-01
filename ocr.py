@@ -606,6 +606,7 @@ def get_echo_info(processed_image, element):
             if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
                 name, value = match.groups()
                 name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
+                name = re.sub(r'(DMG).*', r'\1', name)
                 name = name.replace('.', '')\
                         .replace('DMG Bonus', '')\
                         .replace('BMG', 'DMG')\
@@ -630,7 +631,7 @@ def get_echo_info(processed_image, element):
                         .strip()
                 name = name if name else "HP"
                 sub_stats.append({'name': name, 'value': value.strip()})
-
+                
     name_text = pytesseract.image_to_string(name_img).strip()
     if 'phantom:' in name_text.lower() or ':' in name_text:
         name_text = name_text.split(':', 1)[-1].strip()    
