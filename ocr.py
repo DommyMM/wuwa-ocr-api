@@ -643,6 +643,7 @@ def get_echo_info(processed_image, element):
     main_stat = {}
     if match := re.search(r'(.*?)(\d+\.?\d*\%?)$', main_text):
         name, value = match.groups()
+        name = re.sub(r'(\w+)rit\b', 'Crit', name)
         name = name.replace('DMG Bonus', 'DMG')\
                 .replace('BMG', 'DMG')\
                 .replace('.', '')\
