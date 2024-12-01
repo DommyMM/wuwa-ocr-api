@@ -606,29 +606,29 @@ def get_echo_info(processed_image, element):
             if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
                 name, value = match.groups()
                 name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
-                name = re.sub(r'(DMG).*', r'\1', name)
                 name = name.replace('.', '')\
-                        .replace('DMG Bonus', '')\
                         .replace('BMG', 'DMG')\
+                        .replace('CritDMGN', 'Crit DMG')\
+                        .replace('ATKON', 'ATK')\
+                        .replace('Gr', 'Crit')\
+                        .replace('oo', '')\
+                        .replace('DMG Bonus', '')\
                         .replace('Resonance', '')\
                         .replace('Regonance', '')\
-                        .replace('Gr', 'Crit')\
-                        .replace('CritDMGN', 'Crit DMG')\
                         .replace('SNON', '')\
-                        .replace('ATKON', 'ATK')\
                         .replace(' ON', '')\
                         .replace(' N', '')\
                         .replace(' a', '')\
-                        .replace('—', '')\
-                        .replace(':', '')\
-                        .replace(',', '')\
-                        .replace('~~', '')\
-                        .replace('oo', '')\
                         .replace(' *', '')\
                         .replace('*', '')\
                         .replace(' ~', '')\
                         .replace('~', '')\
+                        .replace('—', '')\
+                        .replace(':', '')\
+                        .replace(',', '')\
+                        .replace('~~', '')\
                         .strip()
+                name = re.sub(r'(DMG).*', r'\1', name)
                 name = name if name else "HP"
                 sub_stats.append({'name': name, 'value': value.strip()})
                 
