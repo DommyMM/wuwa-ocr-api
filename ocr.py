@@ -603,7 +603,7 @@ def get_echo_info(processed_image, element):
         sub_text = pytesseract.image_to_string(sub_img).strip().replace('\n', ' ')
         
         if sub_text:
-            if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)$', sub_text):
+            if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s]*)?$', sub_text):
                 name, value = match.groups()
                 name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
                 name = name.replace('.', '')\
@@ -614,11 +614,15 @@ def get_echo_info(processed_image, element):
                         .replace('Gr', 'Crit')\
                         .replace('CritDMGN', 'Crit DMG')\
                         .replace('SNON', '')\
+                        .replace('ATKON', 'ATK')\
+                        .replace(' ON', '')\
                         .replace(' N', '')\
                         .replace(' a', '')\
                         .replace('—', '')\
                         .replace(':', '')\
                         .replace(',', '')\
+                        .replace('~~', '')\
+                        .replace('oo', '')\
                         .strip()
                 name = name if name else "HP"
                 sub_stats.append({'name': name, 'value': value.strip()})

@@ -98,12 +98,7 @@ async def process_image_bytes(image_bytes: bytes):
             future = loop.run_in_executor(executor, process_image, image)
             result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
             
-            debug_output = stdout.getvalue()
-            
-            if result["success"]:
-                result["analysis"]["debug_output"] = debug_output
-            else:
-                result["debug_output"] = debug_output
+            ocr_output = stdout.getvalue()
             
             return result
         finally:
