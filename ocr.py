@@ -434,19 +434,18 @@ def get_forte_info(slots):
                 text = pytesseract.image_to_string(processed_image)
                 text = text.replace('\\', '').replace('"', '').replace("'", '')
                 
-                level = None
+                level = 10
                 for pattern in level_patterns:
                     match = re.search(pattern, text)
                     if match:
                         try:
-                            level = int(match.group(1))
-                            if level > 10:
-                                level = 10
-                            if 1 <= level <= 10:
-                                branches[branch_name]['level'] = level
+                            detected_level = int(match.group(1))
+                            if 1 <= detected_level <= 10:
+                                level = detected_level
                                 break
                         except ValueError:
                             continue
+                branches[branch_name]['level'] = level
                             
         elif 'mid' in slot_name or 'top' in slot_name:
             branch_base = slot_name.split('-')[0]
@@ -601,7 +600,6 @@ def get_echo_info(processed_image, element):
         sub_img = crop_region(processed_image, ECHO_REGIONS[sub_key])
         sub_images.append(sub_img)
         sub_text = pytesseract.image_to_string(sub_img).strip().replace('\n', ' ')
-        
         if sub_text:
             if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
                 name, value = match.groups()
@@ -627,8 +625,14 @@ def get_echo_info(processed_image, element):
                         .replace(':', '')\
                         .replace(',', '')\
                         .replace('~~', '')\
+                        .replace('+', '')\
+                        .replace('-', '')\
+                        .replace('=', '')\
                         .strip()
                 name = re.sub(r'(DMG).*', r'\1', name)
+                name = re.sub(r'(Rate).*', r'\1', name)
+                name = re.sub(r'\s+', ' ', name)
+                name = name.strip()
                 name = name if name else "HP"
                 sub_stats.append({'name': name, 'value': value.strip()})
                 
@@ -647,6 +651,7 @@ def get_echo_info(processed_image, element):
         name = name.replace('DMG Bonus', 'DMG')\
                 .replace('BMG', 'DMG')\
                 .replace('.', '')\
+                .replace('+', '')\
                 .strip()
         if 'DMG' in name:
             name = re.sub(r'(DMG).*', r'\1', name)
