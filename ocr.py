@@ -6,6 +6,7 @@ import os
 import re
 import json
 from pathlib import Path
+import difflib
 
 SCAN_REGIONS = {
     "info": {"top": 0, "left": 0, "width": 0.13, "height": 0.11},
@@ -587,6 +588,115 @@ def get_icon(circle_bgra, possible_elements):
             best_match = element
     return best_match
 
+VALID_STATS = {
+    "HP", "ATK", "DEF", "Crit Rate", "Crit DMG", "Energy Regen",
+    "Healing Bonus", "Aero DMG", "Glacio DMG", "Fusion DMG",
+    "Electro DMG", "Havoc DMG", "Spectro DMG", "Basic Attack",
+    "Heavy Attack", "Skill", "Liberation"
+}
+
+DEFAULT_VALUES = [6.4, 7.1, 7.9, 8.6, 9.4, 10.1, 10.9, 11.6]
+
+SUBSTAT_VALUES = {
+    "HP": [320, 360, 390, 430, 470, 510, 540, 580],
+    "ATK": [30, 40, 50, 60],
+    "DEF": [40, 50, 60, 70],
+    
+    "HP": DEFAULT_VALUES,
+    "ATK": DEFAULT_VALUES,
+    "DEF": [8.1, 9, 10, 10.9, 11.8, 12.8, 13.8, 14.7],
+    "Crit Rate": [6.3, 6.9, 7.5, 8.1, 8.7, 9.3, 9.9, 10.5],
+    "Crit DMG": [12.6, 13.8, 15, 16.2, 17.4, 18.6, 19.8, 21],
+    "Energy Regen": [6.8, 7.6, 8.4, 9.2, 10, 10.8, 11.6, 12.4],
+    "Basic Attack": DEFAULT_VALUES,
+    "Heavy Attack": DEFAULT_VALUES,
+    "Skill": DEFAULT_VALUES,
+    "Liberation": DEFAULT_VALUES
+}
+
+def is_percentage_stat(stat_name: str, value: float) -> bool:
+    return (stat_name in ["Basic Attack", "Heavy Attack", "Skill", "Liberation", "Crit Rate", "Crit DMG", "Energy Regen"] or (stat_name in ["HP", "ATK", "DEF"] and value < 100))
+
+def normalize_stat_name(raw_name: str, threshold: float = 0.8) -> str:
+    print(f"Input: {raw_name}")
+    
+    name = raw_name.replace('BMG', 'DMG')\
+                    .replace('CritDMGN', 'Crit DMG')\
+                    .replace('ATKON', 'ATK')\
+                    .replace('Gr', 'Crit')\
+                    .replace('Crt', 'Crit')\
+                    .replace('Ragan', 'Regen')\
+                    .replace('AQ@ERA', 'Attack')
+    print(f"After replacements: {name}")
+    
+    name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
+    name = re.sub(r'[*~—:,+\-=.]', '', name)
+    name = name.replace('DMG Bonus', 'DMG')\
+                .replace('Resonance', '')\
+                .replace('SNON', '')\
+                .replace(' ON', '')\
+                .replace('oo', '')
+    print(f"After cleanup: {name}")
+    
+    original_case = name.strip()
+    
+    name = name.lower()
+    name = re.sub(r'(dmg).*', r'\1', name)
+    name = re.sub(r'(rate).*', r'\1', name)
+    name = re.sub(r'\s+', ' ', name)
+    name = name.strip()
+    print(f"After patterns: {name}")
+
+    if name.startswith('heavy'):
+        return "Heavy Attack"
+    if name.startswith('basic'):
+        return "Basic Attack"
+    if name.startswith('crit') and 'dmg' in name:
+        return "Crit DMG"
+    if name.startswith('crit'):
+        return "Crit Rate"
+    if name.startswith('energy'):
+        return "Energy Regen"
+    if name.startswith('liber'):
+        return "Liberation"
+    if name.startswith('skill'):
+        return "Skill"
+    if name == 'atk':
+        return "ATK"
+    
+    elements = ['Aero', 'Glacio', 'Fusion', 'Electro', 'Havoc', 'Spectro']
+    for element in elements:
+        if element.lower() in name and 'dmg' in name:
+            return f"{element} DMG"
+    
+    print(f"Attempting fuzzy match for: {original_case}")
+    print(f"Valid stats: {VALID_STATS}")
+    matches = difflib.get_close_matches(original_case, VALID_STATS, n=1, cutoff=threshold)
+    print(f"Fuzzy matches: {matches}")
+    
+    return matches[0] if matches else "HP"
+
+def normalize_stat_value(stat_name: str, raw_value: str, threshold: float = 0.2) -> str:
+    value = float(raw_value.replace('%', '').strip())
+    
+    if stat_name not in SUBSTAT_VALUES:
+        return raw_value
+        
+    valid_values = SUBSTAT_VALUES[stat_name]
+    
+    sorted_by_distance = sorted(valid_values, key=lambda x: abs(x - value))
+    closest = sorted_by_distance[0]
+    next_closest = sorted_by_distance[1] if len(sorted_by_distance) > 1 else closest
+    
+    if value > closest and next_closest > closest:
+        closest = next_closest
+    
+    if abs(closest - value) / value > threshold:
+        return raw_value
+        
+    if is_percentage_stat(stat_name, value):
+        return f"{closest}%"
+    return str(closest)
 
 def get_echo_info(processed_image, element):
     name_img = upscale_image(crop_region(processed_image, ECHO_REGIONS["name"]))
@@ -602,40 +712,11 @@ def get_echo_info(processed_image, element):
         sub_text = pytesseract.image_to_string(sub_img).strip().replace('\n', ' ')
         if sub_text:
             if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
-                name, value = match.groups()
-                name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
-                name = name.replace('.', '')\
-                        .replace('BMG', 'DMG')\
-                        .replace('CritDMGN', 'Crit DMG')\
-                        .replace('ATKON', 'ATK')\
-                        .replace('Gr', 'Crit')\
-                        .replace('oo', '')\
-                        .replace('DMG Bonus', '')\
-                        .replace('Resonance', '')\
-                        .replace('Regonance', '')\
-                        .replace('SNON', '')\
-                        .replace(' ON', '')\
-                        .replace(' N', '')\
-                        .replace(' a', '')\
-                        .replace(' *', '')\
-                        .replace('*', '')\
-                        .replace(' ~', '')\
-                        .replace('~', '')\
-                        .replace('—', '')\
-                        .replace(':', '')\
-                        .replace(',', '')\
-                        .replace('~~', '')\
-                        .replace('+', '')\
-                        .replace('-', '')\
-                        .replace('=', '')\
-                        .strip()
-                name = re.sub(r'(DMG).*', r'\1', name)
-                name = re.sub(r'(Rate).*', r'\1', name)
-                name = re.sub(r'\s+', ' ', name)
-                name = name.strip()
-                name = name if name else "HP"
-                sub_stats.append({'name': name, 'value': value.strip()})
-                
+                raw_name, raw_value = match.groups()
+                name = normalize_stat_name(raw_name)
+                value = normalize_stat_value(name, raw_value)
+                sub_stats.append({'name': name, 'value': value})
+
     name_text = pytesseract.image_to_string(name_img).strip()
     if 'phantom:' in name_text.lower() or ':' in name_text:
         name_text = name_text.split(':', 1)[-1].strip()    
