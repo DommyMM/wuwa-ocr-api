@@ -347,7 +347,7 @@ def get_weapon_info(text):
         r'Lv[\.|\s]*(\d+)[\s/]+(\d+)',
         r'v[\.]?(\d+)[\s/]+(\d+)',
         r'Level[\s]*(\d+)[\s/]+(\d+)',
-        r'[X\s]*[Ll]yv\.?(\d+)[\s/]+(\d+)', 
+        r'[X\s]*[Ll]yv\.?(\d+)[\s/]+(\d+)',
         r'[X\s]*[Ll]y?v\.?(\d+)[\s/]+(\d+)',
         r'.*v.*?(\d+)/90',
         r'(\d+)/90'
@@ -647,6 +647,14 @@ def normalize_stat_name(raw_name: str, threshold: float = 0.8) -> str:
     name = name.strip()
     print(f"After patterns: {name}")
 
+    elements = ['Aero', 'Glacio', 'Fusion', 'Electro', 'Havoc', 'Spectro']
+    if 'dmg' in name.lower():
+        name_without_dmg = name.lower().replace('dmg', '').strip()
+        element_matches = difflib.get_close_matches(name_without_dmg, [e.lower() for e in elements], n=1, cutoff=0.6)
+        if element_matches:
+            matched_element = next(e for e in elements if e.lower() == element_matches[0])
+            return f"{matched_element} DMG"
+
     if name.startswith('heavy'):
         return "Heavy Attack"
     if name.startswith('basic'):
@@ -663,11 +671,6 @@ def normalize_stat_name(raw_name: str, threshold: float = 0.8) -> str:
         return "Skill"
     if name == 'atk':
         return "ATK"
-    
-    elements = ['Aero', 'Glacio', 'Fusion', 'Electro', 'Havoc', 'Spectro']
-    for element in elements:
-        if element.lower() in name and 'dmg' in name:
-            return f"{element} DMG"
     
     print(f"Attempting fuzzy match for: {original_case}")
     print(f"Valid stats: {VALID_STATS}")
