@@ -76,8 +76,13 @@ RUN mkdir -p /usr/local/share/tessdata/script && \
 ENV TESSDATA_PREFIX=/usr/local/share/tessdata
 
 WORKDIR /app
+
+RUN mkdir -p /app/Public
+COPY Public /app/Public
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
 RUN tesseract --version
