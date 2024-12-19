@@ -7,3 +7,5 @@ numpy==1.26.4
 Pillow==10.4.0
 pytesseract==0.3.10
 pydantic
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.0

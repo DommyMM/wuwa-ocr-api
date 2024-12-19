@@ -1,12 +1,10 @@
 import cv2
 import numpy as np
 import pytesseract
-from PIL import Image
-import os
 import re
 import json
 from pathlib import Path
-import difflib
+from fuzzywuzzy import process
 
 SCAN_REGIONS = {
     "info": {"top": 0, "left": 0, "width": 0.13, "height": 0.11},
@@ -50,7 +48,7 @@ ECHO_REGIONS = {
 }
 
 BACKEND_DIR = Path(__file__).parent
-DATA_DIR = BACKEND_DIR/ 'Public' / 'Data'
+DATA_DIR = BACKEND_DIR / 'Public' / 'Data'
 
 ORIGINAL_IMAGE = None
 
@@ -59,14 +57,37 @@ try:
         CHARACTERS = json.load(f)
     with open(DATA_DIR / 'Weapons.json', 'r', encoding='utf-8') as f:
         WEAPONS = json.load(f)
+    with open(DATA_DIR / 'mainstat.json', 'r', encoding='utf-8') as f:
+        main_data = json.load(f)
+        MAIN_STAT_NAMES = set()
+        for cost_data in main_data.values():
+            if "mainStats" in cost_data:
+                for stat_name in cost_data["mainStats"].keys():
+                    if stat_name in ["HP%", "ATK%", "DEF%"]:
+                        MAIN_STAT_NAMES.add(stat_name.replace("%", ""))
+                    else:
+                        MAIN_STAT_NAMES.add(stat_name)
+    with open(DATA_DIR / 'substats.json', 'r', encoding='utf-8') as f:
+        sub_data = json.load(f)
+        SUB_STATS = sub_data["subStats"]
+        SUB_STAT_NAMES = set(SUB_STATS.keys())
+    with open(DATA_DIR / 'Echoes.json', 'r', encoding='utf-8') as f:
+        echoes_data = json.load(f)
+        ECHO_NAMES = [echo['name'] for echo in echoes_data]
 except FileNotFoundError:
     print("Warning: Reference data files not found")
     CHARACTERS = []
     WEAPONS = {}
+    MAIN_STAT_NAMES = set()
+    SUB_STATS = {}
+    ECHO_NAMES = []
 except json.JSONDecodeError as e:
     print(f"Warning: Invalid JSON format in data files: {e}")
     CHARACTERS = []
     WEAPONS = {}
+    MAIN_STAT_NAMES = set()
+    SUB_STATS = {}
+    ECHO_NAMES = []
 
 def preprocess_image(image, region_name=None):    
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -588,118 +609,152 @@ def get_icon(circle_bgra, possible_elements):
             best_match = element
     return best_match
 
-VALID_STATS = {
-    "HP", "ATK", "DEF", "Crit Rate", "Crit DMG", "Energy Regen",
-    "Healing Bonus", "Aero DMG", "Glacio DMG", "Fusion DMG",
-    "Electro DMG", "Havoc DMG", "Spectro DMG", "Basic Attack",
-    "Heavy Attack", "Skill", "Liberation"
-}
-
-DEFAULT_VALUES = [6.4, 7.1, 7.9, 8.6, 9.4, 10.1, 10.9, 11.6]
-
-SUBSTAT_VALUES = {
-    "HP": [320, 360, 390, 430, 470, 510, 540, 580],
-    "ATK": [30, 40, 50, 60],
-    "DEF": [40, 50, 60, 70],
+def match_element_dmg(name: str, threshold: int = 85) -> str:
+    # Get element list from MAIN_STAT_NAMES
+    elements = [stat.replace(' DMG', '') for stat in MAIN_STAT_NAMES if ' DMG' in stat]
     
-    "HP": DEFAULT_VALUES,
-    "ATK": DEFAULT_VALUES,
-    "DEF": [8.1, 9, 10, 10.9, 11.8, 12.8, 13.8, 14.7],
-    "Crit Rate": [6.3, 6.9, 7.5, 8.1, 8.7, 9.3, 9.9, 10.5],
-    "Crit DMG": [12.6, 13.8, 15, 16.2, 17.4, 18.6, 19.8, 21],
-    "Energy Regen": [6.8, 7.6, 8.4, 9.2, 10, 10.8, 11.6, 12.4],
-    "Basic Attack": DEFAULT_VALUES,
-    "Heavy Attack": DEFAULT_VALUES,
-    "Skill": DEFAULT_VALUES,
-    "Liberation": DEFAULT_VALUES
-}
-
-def is_percentage_stat(stat_name: str, value: float) -> bool:
-    return (stat_name in ["Basic Attack", "Heavy Attack", "Skill", "Liberation", "Crit Rate", "Crit DMG", "Energy Regen"] or (stat_name in ["HP", "ATK", "DEF"] and value < 100))
-
-def normalize_stat_name(raw_name: str, threshold: float = 0.8) -> str:
-    print(f"Input: {raw_name}")
+    # Extract potential element name before "DMG Bonus"
+    element_part = name.lower().split('dmg bonus')[0].strip()
+    print(f"Matching '{element_part}' against elements: {elements}")
     
+    match, score = process.extractOne(element_part, [e.lower() for e in elements])
+    print(f"Best match: {match} (score: {score})")
+    
+    if score >= threshold:
+        # Important: Return the matched element + " DMG"
+        return f"{match.title()} DMG"  # This ensures we return "Electro DMG" not just "Electro"
+    return None
+
+def normalize_main_stat_name(raw_name: str, threshold: int = 80) -> str:
+    print(f"Input main stat: {raw_name}")
+    
+    # Clean input
+    name = raw_name.replace('BMG', 'DMG')\
+                    .replace('¥', '')\
+                    .replace('0MG', 'DMG')\
+                    .replace('CritDMGN', 'Crit DMG')\
+                    .strip()
+    print(f"After cleanup: {name}")
+    
+    # Try element DMG match only if "DMG Bonus" present
+    if 'DMG Bonus' in name:
+        element_match = match_element_dmg(name, threshold=85)
+        if element_match:
+            return element_match  # Return directly if we found an element match
+    
+    # Only do general main stat match if we didn't find an element match
+    match, score = process.extractOne(name, list(MAIN_STAT_NAMES))
+    print(f"Main stat match: {match} (score: {score})")
+    
+    return match if score >= threshold else "HP"
+
+def is_percentage_stat(stat_name: str) -> bool:
+    """Return whether a stat should be displayed with a percentage"""
+    return stat_name in ["Basic Attack", "Heavy Attack", "Skill", "Liberation", "Crit Rate", "Crit DMG", "Energy Regen", "HP%", "ATK%", "DEF%"]
+
+def normalize_stat_name(raw_name: str, raw_value: str = "", threshold: int = 85) -> str:
+    """Normalize substat names with % variants"""
+    print(f"Input: name='{raw_name}', value='{raw_value}'")
+    
+    # Handle empty input
+    if not raw_name or raw_name.isspace():
+        return "HP%" if '%' in raw_value else "HP"
+    
+    # Clean OCR errors
     name = raw_name.replace('BMG', 'DMG')\
                     .replace('CritDMGN', 'Crit DMG')\
+                    .replace('¥', '')\
+                    .replace('0MG', 'DMG')\
+                    .replace('. DMG', 'Crit DMG')\
                     .replace('ATKON', 'ATK')\
                     .replace('Gr', 'Crit')\
                     .replace('Crt', 'Crit')\
                     .replace('Ragan', 'Regen')\
-                    .replace('AQ@ERA', 'Attack')
-    print(f"After replacements: {name}")
+                    .replace('AQ@ERA', 'Attack')\
+                    .strip()
     
-    name = re.sub(r'[\\\\][u]?[0-9A-Fa-f]*', '', name)
     name = re.sub(r'[*~—:,+\-=.]', '', name)
-    name = name.replace('DMG Bonus', 'DMG')\
-                .replace('Resonance', '')\
-                .replace('SNON', '')\
-                .replace(' ON', '')\
-                .replace('oo', '')
-    print(f"After cleanup: {name}")
+    name = re.sub(r'\s+', ' ', name).strip()
+    print(f"Cleaned: '{name}'")
     
-    original_case = name.strip()
+    # First try exact match
+    if name.upper() in ["HP", "ATK", "DEF"]:
+        # If it's an exact match for base stat, check if we need %
+        return f"{name.upper()}%" if '%' in raw_value else name.upper()
+        
+    # Fuzzy match
+    match, score = process.extractOne(name, list(SUB_STAT_NAMES))
+    print(f"Match: {match} (score: {score})")
     
-    name = name.lower()
-    name = re.sub(r'(dmg).*', r'\1', name)
-    name = re.sub(r'(rate).*', r'\1', name)
-    name = re.sub(r'\s+', ' ', name)
-    name = name.strip()
-    print(f"After patterns: {name}")
+    if score >= threshold:
+        return match
+        
+    # Default with % check - only if it was in original
+    return "HP%" if '%' in raw_value else "HP"
 
-    elements = ['Aero', 'Glacio', 'Fusion', 'Electro', 'Havoc', 'Spectro']
-    if 'dmg' in name.lower():
-        name_without_dmg = name.lower().replace('dmg', '').strip()
-        element_matches = difflib.get_close_matches(name_without_dmg, [e.lower() for e in elements], n=1, cutoff=0.6)
-        if element_matches:
-            matched_element = next(e for e in elements if e.lower() == element_matches[0])
-            return f"{matched_element} DMG"
-
-    if name.startswith('heavy'):
-        return "Heavy Attack"
-    if name.startswith('basic'):
-        return "Basic Attack"
-    if name.startswith('crit') and 'dmg' in name:
-        return "Crit DMG"
-    if name.startswith('crit'):
-        return "Crit Rate"
-    if name.startswith('energy'):
-        return "Energy Regen"
-    if name.startswith('liber'):
-        return "Liberation"
-    if name.startswith('skill'):
-        return "Skill"
-    if name == 'atk':
-        return "ATK"
-    
-    print(f"Attempting fuzzy match for: {original_case}")
-    print(f"Valid stats: {VALID_STATS}")
-    matches = difflib.get_close_matches(original_case, VALID_STATS, n=1, cutoff=threshold)
-    print(f"Fuzzy matches: {matches}")
-    
-    return matches[0] if matches else "HP"
+def numeric_similarity(val1: float, val2: float, threshold: float = 0.2) -> int:
+    """Return similarity score (0-100) between two numbers"""
+    diff = abs(val1 - val2) / max(val1, val2)
+    if diff > threshold:
+        return 0
+    return int((1 - diff/threshold) * 100)
 
 def normalize_stat_value(stat_name: str, raw_value: str, threshold: float = 0.2) -> str:
-    value = float(raw_value.replace('%', '').strip())
+    """Match stat values using fuzzy numeric matching"""
+    print(f"\n=== Value Normalization ===")
+    print(f"Normalizing value for {stat_name}: {raw_value}")
     
-    if stat_name not in SUBSTAT_VALUES:
+    try:
+        value = float(raw_value.replace('%', '').strip())
+    except ValueError:
+        print(f"Failed to parse value: {raw_value}")
+        return raw_value
+    
+    if stat_name not in SUB_STATS:
+        print(f"No valid values found for stat: {stat_name}")
         return raw_value
         
-    valid_values = SUBSTAT_VALUES[stat_name]
+    valid_values = SUB_STATS[stat_name]
+    print(f"Valid values: {valid_values}")
     
-    sorted_by_distance = sorted(valid_values, key=lambda x: abs(x - value))
-    closest = sorted_by_distance[0]
-    next_closest = sorted_by_distance[1] if len(sorted_by_distance) > 1 else closest
-    
-    if value > closest and next_closest > closest:
-        closest = next_closest
-    
-    if abs(closest - value) / value > threshold:
-        return raw_value
+    try:
+        # Pre-process value if it's likely a misread percentage
+        if '%' in raw_value and value > 21:
+            adjusted_value = value / 10
+            print(f"Adjusted large percentage {value} to {adjusted_value}")
+            value = adjusted_value
+            
+        # Find closest match using absolute difference
+        closest_value = min(valid_values, key=lambda x: abs(float(x) - value))
+        print(f"Closest match: {closest_value}")
         
-    if is_percentage_stat(stat_name, value):
-        return f"{closest}%"
-    return str(closest)
+        # Keep percentage marker if it existed in original value
+        return f"{closest_value}%" if '%' in raw_value else str(closest_value)
+        
+    except Exception as e:
+        print(f"Error finding match: {e}")
+        return raw_value
+
+def normalize_echo_name(raw_name: str, threshold: int = 80) -> str:
+    """Normalize echo names using fuzzy matching"""
+    print(f"\n=== Echo Name Normalization ===")
+    print(f"Input: {raw_name}")
+    
+    # Clean input
+    name = raw_name.strip()
+    if 'phantom:' in name.lower() or ':' in name:
+        name = name.split(':', 1)[-1].strip()
+    print(f"After cleanup: {name}")
+    
+    if not name:
+        print("Empty name, defaulting to Jue")
+        return "Jue"
+        
+    # Fuzzy match against known names
+    match, score = process.extractOne(name, ECHO_NAMES)
+    print(f"Best match: {match} (score: {score})")
+    
+    return match if score >= threshold else name
 
 def get_echo_info(processed_image, element):
     name_img = upscale_image(crop_region(processed_image, ECHO_REGIONS["name"]))
@@ -716,32 +771,28 @@ def get_echo_info(processed_image, element):
         if sub_text:
             if match := re.search(r'(.*?)[\s—:]*(\d+\.?\d*\%?)(?:\s*[~o\s\*]*)?$', sub_text):
                 raw_name, raw_value = match.groups()
-                name = normalize_stat_name(raw_name)
-                value = normalize_stat_value(name, raw_value)
-                sub_stats.append({'name': name, 'value': value})
+                name = normalize_stat_name(raw_name, raw_value)
+                normalized_value = normalize_stat_value(name, raw_value.strip())
+                sub_stats.append({'name': name, 'value': normalized_value})
 
     name_text = pytesseract.image_to_string(name_img).strip()
-    if 'phantom:' in name_text.lower() or ':' in name_text:
-        name_text = name_text.split(':', 1)[-1].strip()    
-    if not name_text:
-        name_text = 'Jue'
+    name_text = normalize_echo_name(name_text)
     
     main_text = pytesseract.image_to_string(main_img).strip().replace('\n', ' ')
+    print(f"\n=== MAIN STAT DEBUG ===")
+    print(f"Raw OCR text: {main_text}")
     
     main_stat = {}
     if match := re.search(r'(.*?)(\d+\.?\d*\%?)$', main_text):
-        name, value = match.groups()
-        name = re.sub(r'(\w+)rit\b', 'Crit', name)
-        name = name.replace('DMG Bonus', 'DMG')\
-                .replace('BMG', 'DMG')\
-                .replace('.', '')\
-                .replace('+', '')\
-                .strip()
-        if 'DMG' in name:
-            name = re.sub(r'(DMG).*', r'\1', name)
-        name = name.replace('CritDMG', 'Crit DMG')\
-                .replace('  ', ' ')
-        main_stat = {'name': name if name else 'HP', 'value': value.strip()}
+        raw_name, value = match.groups()
+        print(f"After regex: name='{raw_name}', value='{value}'")
+        
+        name = normalize_main_stat_name(raw_name)
+        print(f"After normalization: {name}")
+        
+        main_stat = {'name': name, 'value': value.strip()}
+        print(f"Final main_stat: {main_stat}")
+    print("========================\n")
 
     return {
         'type': 'Echo',

@@ -1,0 +1,36 @@
+{
+    "4cost": {
+        "default": ["ATK", 30, 150],
+        "mainStats": {
+            "HP%": [6.6, 33.0],
+            "ATK%": [6.6, 33.0],
+            "DEF%": [8.3, 41.5],
+            "Crit Rate": [4.4, 22.0],
+            "Crit DMG": [8.8, 44.0],
+            "Healing Bonus": [5.2, 26.0]
+        }
+    },
+    "3cost": {
+        "default": ["ATK", 20, 100],
+        "mainStats": {
+            "HP%": [6.0, 30.0],
+            "ATK%": [6.0, 30.0],
+            "DEF%": [7.6, 38.0],
+            "Aero DMG": [6.0, 30.0],
+            "Glacio DMG": [6.0, 30.0],
+            "Fusion DMG": [6.0, 30.0],
+            "Electro DMG": [6.0, 30.0],
+            "Havoc DMG": [6.0, 30.0],
+            "Spectro DMG": [6.0, 30.0],
+            "Energy Regen": [6.4, 32.0]
+        }
+    },
+    "1cost": {
+        "default": ["HP", 456, 2280],
+        "mainStats": {
+            "HP%": [4.5, 22.8],
+            "ATK%": [3.6, 18.0],
+            "DEF%": [3.6, 18.0]
+        }
+    }
+}

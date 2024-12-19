@@ -1,0 +1,302 @@
+[
+    {
+        "name": "Aero Predator",
+        "cost": 1,
+        "elements": ["Aero", "Electro"]
+    },
+    {
+        "name": "Autopuppet Scout",
+        "cost": 3,
+        "elements": ["Spectro", "Glacio"]
+    },
+    {
+        "name": "Baby Viridblaze Saurian",
+        "cost": 1,
+        "elements": ["Electro", "Attack", "Fusion"]
+    },
+    {
+        "name": "Bell-Borne Geochelone",
+        "cost": 4,
+        "elements": ["ER", "Healing"]
+    },
+    {
+        "name": "Carapace",
+        "cost": 3,
+        "elements": ["Aero", "ER"]
+    },
+    {
+        "name": "Chasm Guardian",
+        "cost": 3,
+        "elements": ["Healing", "Attack"]
+    },
+    {
+        "name": "Chirpuff",
+        "cost": 1,
+        "elements": ["Aero", "Havoc"]
+    },
+    {
+        "name": "Clang Bang",
+        "cost": 1,
+        "elements": ["Spectro", "Glacio"]
+    },
+    {
+        "name": "Crownless",
+        "cost": 4,
+        "elements": ["Havoc"]
+    },
+    {
+        "name": "Cruisewing",
+        "cost": 1,
+        "elements": ["Spectro", "ER", "Healing"]
+    },
+    {
+        "name": "Cyan-Feathered Heron",
+        "cost": 3,
+        "elements": ["Aero", "Spectro"]
+    },
+    {
+        "name": "Diamondclaw",
+        "cost": 1,
+        "elements": ["ER", "Attack"]
+    },
+    {
+        "name": "Dreamless",
+        "cost": 4,
+        "elements": ["Havoc"]
+    },
+    {
+        "name": "Dwarf Cassowary",
+        "cost": 1,
+        "elements": ["Aero", "Healing"]
+    },
+    {
+        "name": "Electro Predator",
+        "cost": 1,
+        "elements": ["Electro", "Fusion"]
+    },
+    {
+        "name": "Excarat",
+        "cost": 1,
+        "elements": ["Glacio", "Havoc"]
+    },
+    {
+        "name": "Fallacy of No Return",
+        "cost": 4,
+        "elements": ["Healing"]
+    },
+    {
+        "name": "Feilian Beringal",
+        "cost": 4,
+        "elements": ["Aero"]
+    },
+    {
+        "name": "Fission Junrock",
+        "cost": 1,
+        "elements": ["Electro", "ER", "Healing"]
+    },
+    {
+        "name": "Flautist",
+        "cost": 3,
+        "elements": ["Electro", "Attack"]
+    },
+    {
+        "name": "Fusion Dreadmane",
+        "cost": 1,
+        "elements": ["Healing", "Fusion"]
+    },
+    {
+        "name": "Fusion Prism",
+        "cost": 1,
+        "elements": ["Glacio", "Attack", "Fusion"]
+    },
+    {
+        "name": "Fusion Warrior",
+        "cost": 1,
+        "elements": ["Aero", "Electro", "Fusion"]
+    },
+    {
+        "name": "Glacio Dreadmane",
+        "cost": 3,
+        "elements": ["Glacio", "ER"]
+    },
+    {
+        "name": "Glacio Predator",
+        "cost": 1,
+        "elements": ["Spectro", "Glacio"]
+    },
+    {
+        "name": "Glacio Prism",
+        "cost": 1,
+        "elements": ["Glacio", "ER", "Havoc"]
+    },
+    {
+        "name": "Gulpuff",
+        "cost": 1,
+        "elements": ["Spectro", "Glacio"]
+    },
+    {
+        "name": "Havoc Dreadmane",
+        "cost": 3,
+        "elements": ["Havoc", "Fusion"]
+    },
+    {
+        "name": "Havoc Prism",
+        "cost": 1,
+        "elements": ["Electro", "Spectro", "Havoc"]
+    },
+    {
+        "name": "Havoc Warrior",
+        "cost": 1,
+        "elements": ["Spectro", "Havoc"]
+    },
+    {
+        "name": "Hoartoise",
+        "cost": 1,
+        "elements": ["Spectro", "Glacio"]
+    },
+    {
+        "name": "Hoochief",
+        "cost": 3,
+        "elements": ["Aero", "Healing"]
+    },
+    {
+        "name": "Hooscamp",
+        "cost": 1,
+        "elements": ["Aero", "Attack"]
+    },
+    {
+        "name": "Impermanence Heron",
+        "cost": 4,
+        "elements": ["ER"]
+    },
+    {
+        "name": "Inferno Rider",
+        "cost": 4,
+        "elements": ["Fusion"]
+    },
+    {
+        "name": "Jue",
+        "cost": 4,
+        "elements": ["Spectro"]
+    },
+    {
+        "name": "Lampylumen Myriad",
+        "cost": 4,
+        "elements": ["Glacio"]
+    },
+    {
+        "name": "Lava Larva",
+        "cost": 1,
+        "elements": ["Attack", "Fusion"]
+    },
+    {
+        "name": "Lightcrusher",
+        "cost": 3,
+        "elements": ["Spectro"]
+    },
+    {
+        "name": "Lumiscale Construct",
+        "cost": 3,
+        "elements": ["Electro", "Glacio"]
+    },
+    {
+        "name": "Mech Abomination",
+        "cost": 4,
+        "elements": ["Attack"]
+    },
+    {
+        "name": "Mourning Aix",
+        "cost": 4,
+        "elements": ["Spectro"]
+    },
+    {
+        "name": "Rocksteady Guardian",
+        "cost": 3,
+        "elements": ["Spectro", "Healing"]
+    },
+    {
+        "name": "Roseshroom",
+        "cost": 3,
+        "elements": ["Glacio", "Havoc"]
+    },
+    {
+        "name": "Sabyr Boar",
+        "cost": 1,
+        "elements": ["Aero", "Glacio", "ER"]
+    },
+    {
+        "name": "Snip Snap",
+        "cost": 1,
+        "elements": ["Healing", "Attack", "Fusion"]
+    },
+    {
+        "name": "Spearback",
+        "cost": 3,
+        "elements": ["ER", "Attack"]
+    },
+    {
+        "name": "Spectro Prism",
+        "cost": 1,
+        "elements": ["Electro", "Spectro", "Fusion"]
+    },
+    {
+        "name": "Stonewall Bracer",
+        "cost": 3,
+        "elements": ["ER", "Healing"]
+    },
+    {
+        "name": "Tambourinist",
+        "cost": 3,
+        "elements": ["Glacio", "Havoc"]
+    },
+    {
+        "name": "Tempest Mephis",
+        "cost": 4,
+        "elements": ["Electro"]
+    },
+    {
+        "name": "Thundering Mephis",
+        "cost": 4,
+        "elements": ["Electro"]
+    },
+    {
+        "name": "Tick Tack",
+        "cost": 1,
+        "elements": ["Healing", "Attack", "Havoc"]
+    },
+    {
+        "name": "Traffic Illuminator",
+        "cost": 1,
+        "elements": ["Aero", "Electro", "Fusion"]
+    },
+    {
+        "name": "Vanguard Junrock",
+        "cost": 1,
+        "elements": ["Electro", "Healing", "Attack"]
+    },
+    {
+        "name": "Violet-Feathered Heron",
+        "cost": 3,
+        "elements": ["Electro", "Fusion"]
+    },
+    {
+        "name": "Viridblaze Saurian",
+        "cost": 3,
+        "elements": ["ER", "Fusion"]
+    },
+    {
+        "name": "Whiff Whaff",
+        "cost": 1,
+        "elements": ["Aero", "ER", "Healing"]
+    },
+    {
+        "name": "Young Roseshroom",
+        "cost": 1,
+        "elements": ["Aero", "Havoc"]
+    },
+    {
+        "name": "Zig Zag",
+        "cost": 1,
+        "elements": ["Spectro", "ER", "Attack"]
+    }
+]
