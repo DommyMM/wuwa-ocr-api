@@ -8,8 +8,7 @@ import numpy as np
 import base64
 from concurrent.futures import ProcessPoolExecutor, TimeoutError
 import multiprocessing
-from typing import Optional
-from ocr import process_image
+from typing import Optional, List
 from echo import process_echo
 from contextlib import asynccontextmanager
 import time
@@ -37,8 +36,7 @@ class RateLimiter:
         return False
 
 class ImageRequest(BaseModel):
-    image: str
-    type: Optional[str] = None
+    images: List[str]
 
 class OCRResponse(BaseModel):
     success: bool
@@ -84,31 +82,6 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-async def process_image_bytes(image_bytes: bytes):
-    try:
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        if image is None:
-            raise ValueError("Failed to decode image")
-        
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_image, image)
-        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
-        
-        return result
-            
-    except TimeoutError:
-        raise HTTPException(
-            status_code=408,
-            detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds allowed)"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Image processing error: {str(e)}"
-        )
-
 async def process_echo_image(image_bytes: bytes):
     try:
         nparr = np.frombuffer(image_bytes, np.uint8)
@@ -137,30 +110,33 @@ async def process_echo_image(image_bytes: bytes):
 async def homepage():
     return APIStatus()
 
-@app.post("/api/ocr", response_model=OCRResponse)
+@app.post("/api/ocr", response_model=List[OCRResponse])
 async def process_image_request(request: Request, image_data: ImageRequest):
     try:
-        image_str = image_data.image
-        if ',' in image_str:
-            image_str = image_str.split(',')[1]
-            
-        image_bytes = base64.b64decode(image_str)
+        print("\n=== New Echo Image Request(s) ===")
+        print(f"Origin: {request.headers.get('origin', 'unknown')}")
+        print(f"Batch request with {len(image_data.images)} images")
+        print("=================================\n")
         
-        # Route to specific processor based on type
-        if image_data.type == "Echo":
+        results = []
+        for image_str in image_data.images:
+            if ',' in image_str:
+                image_str = image_str.split(',')[1]
+                
+            image_bytes = base64.b64decode(image_str)
             result = await process_echo_image(image_bytes)
-        else:
-            result = await process_image_bytes(image_bytes)
+            results.append(result)
             
-        return result
-            
+        return results
+        
     except Exception as e:
+        print(f"Error processing request: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={
+            content=[{
                 "success": False,
                 "error": str(e)
-            }
+            }] * len(image_data.images)
         )
 
 @app.get("/health")
