@@ -57,7 +57,7 @@ try:
         CHARACTERS = json.load(f)
     with open(DATA_DIR / 'Weapons.json', 'r', encoding='utf-8') as f:
         WEAPONS = json.load(f)
-    with open(DATA_DIR / 'mainstat.json', 'r', encoding='utf-8') as f:
+    with open(DATA_DIR / 'Mainstat.json', 'r', encoding='utf-8') as f:
         main_data = json.load(f)
         MAIN_STAT_NAMES = set()
         for cost_data in main_data.values():
@@ -67,7 +67,7 @@ try:
                         MAIN_STAT_NAMES.add(stat_name.replace("%", ""))
                     else:
                         MAIN_STAT_NAMES.add(stat_name)
-    with open(DATA_DIR / 'substats.json', 'r', encoding='utf-8') as f:
+    with open(DATA_DIR / 'Substats.json', 'r', encoding='utf-8') as f:
         sub_data = json.load(f)
         SUB_STATS = sub_data["subStats"]
         SUB_STAT_NAMES = set(SUB_STATS.keys())
@@ -300,7 +300,7 @@ def get_character_info(text):
         'element': element,
         'uid': uid
     }
-    
+
 def detect_rover_gender():
     global ORIGINAL_IMAGE
     

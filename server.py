@@ -10,6 +10,7 @@ from concurrent.futures import ProcessPoolExecutor, TimeoutError
 import multiprocessing
 from typing import Optional
 from ocr import process_image
+from echo import process_echo
 from contextlib import asynccontextmanager
 import time
 from collections import defaultdict
@@ -19,7 +20,7 @@ from io import StringIO
 
 MAX_WORKERS = max(2, multiprocessing.cpu_count() - 1)
 PROCESS_TIMEOUT = 30
-REQUESTS_PER_MINUTE = 20
+REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
 
 class RateLimiter:
@@ -37,6 +38,7 @@ class RateLimiter:
 
 class ImageRequest(BaseModel):
     image: str
+    type: Optional[str] = None
 
 class OCRResponse(BaseModel):
     success: bool
@@ -90,24 +92,40 @@ async def process_image_bytes(image_bytes: bytes):
         if image is None:
             raise ValueError("Failed to decode image")
         
-        stdout = StringIO()
-        sys.stdout = stdout
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(executor, process_image, image)
+        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
         
-        try:
-            loop = asyncio.get_event_loop()
-            future = loop.run_in_executor(executor, process_image, image)
-            result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
-            
-            ocr_output = stdout.getvalue()
-            
-            return result
-        finally:
-            sys.stdout = sys.__stdout__
+        return result
             
     except TimeoutError:
         raise HTTPException(
             status_code=408,
             detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds allowed)"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Image processing error: {str(e)}"
+        )
+
+async def process_echo_image(image_bytes: bytes):
+    try:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if image is None:
+            raise ValueError("Failed to decode image")
+            
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(executor, process_echo, image)
+        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
+        return result
+        
+    except TimeoutError:
+        raise HTTPException(
+            status_code=408,
+            detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)"
         )
     except Exception as e:
         raise HTTPException(
@@ -126,18 +144,15 @@ async def process_image_request(request: Request, image_data: ImageRequest):
         if ',' in image_str:
             image_str = image_str.split(',')[1]
             
-        try:
-            image_bytes = base64.b64decode(image_str)
+        image_bytes = base64.b64decode(image_str)
+        
+        # Route to specific processor based on type
+        if image_data.type == "Echo":
+            result = await process_echo_image(image_bytes)
+        else:
             result = await process_image_bytes(image_bytes)
-            return result
-        except Exception as e:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "error": f"Image processing error: {str(e)}"
-                }
-            )
+            
+        return result
             
     except Exception as e:
         return JSONResponse(
