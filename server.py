@@ -2,18 +2,17 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import asyncio
 import cv2
 import numpy as np
 import base64
-from concurrent.futures import ProcessPoolExecutor, TimeoutError
-from typing import Optional, List
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
+from typing import Optional
 from echo import process_echo
-from contextlib import asynccontextmanager
 import time
-from time import perf_counter
 from collections import defaultdict
 import os
+import asyncio
+from contextlib import asynccontextmanager
 
 MAX_WORKERS = 6
 PROCESS_TIMEOUT = 60
@@ -34,7 +33,7 @@ class RateLimiter:
         return False
 
 class ImageRequest(BaseModel):
-    image: str  # Single image instead of List
+    image: str
 
 class OCRResponse(BaseModel):
     success: bool
@@ -63,7 +62,13 @@ class APIStatus(BaseModel):
         }
     }
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    executor.shutdown(wait=True)
+
+app = FastAPI(lifespan=lifespan)
+executor = ProcessPoolExecutor(max_workers=MAX_WORKERS)
 rate_limiter = RateLimiter()
 
 app.add_middleware(
@@ -95,13 +100,12 @@ async def process_echo_image(image_bytes: bytes):
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if image is None:
             raise ValueError("Failed to decode image")
-            
-        process_start = time.perf_counter()
-        result = process_echo(image)
-        print(f"OCR process time: {time.perf_counter() - process_start:.2f}s")
         
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(executor, process_echo, image)
+        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
         return result
-        
+            
     except TimeoutError:
         raise HTTPException(
             status_code=408,
@@ -112,7 +116,6 @@ async def process_echo_image(image_bytes: bytes):
             status_code=400,
             detail=f"Image processing error: {str(e)}"
         )
-
 @app.get("/", response_model=APIStatus)
 async def homepage():
     return APIStatus()

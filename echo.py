@@ -1,19 +1,12 @@
 import cv2
 import numpy as np
+import pytesseract
 from typing import Dict, List, Tuple
 from pathlib import Path
 import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
-from rapidocr_onnxruntime import RapidOCR
 
-OCR = None
-
-def get_ocr():
-    global OCR
-    if OCR is None:
-        OCR = RapidOCR(lang='en')
-    return OCR
 
 BACKEND_DIR = Path(__file__).parent
 DATA_DIR = BACKEND_DIR / 'Public' / 'Data'
@@ -52,18 +45,40 @@ except json.JSONDecodeError as e:
     ECHO_NAMES = []
     ECHO_ELEMENTS = {}
 
-def read_and_crop_image(image: np.ndarray) -> List[Tuple[int, int, str, int, int]]:
-    ocr = get_ocr()
-    result, _ = ocr(image)
-    entries = []
-    for item in result:
-        box, text, _ = item
-        x1, y1 = box[0]
-        x2, y2 = box[2]
-        w = int(x2 - x1)
-        h = int(y2 - y1)
-        entries.append((int(y1), int(x1), text, w, h))
-    return entries
+ECHO_REGIONS = {
+    "name": {"top": 0.052, "left": 0.055, "width": 0.8, "height": 0.11},
+    "level": {"top": 0.23, "left": 0.08, "width": 0.1, "height": 0.08},
+    "main": {"top": 0.31, "left": 0.145, "width": 0.78, "height": 0.085},
+    "sub1": {"top": 0.53, "left": 0.115, "width": 0.81, "height": 0.08},
+    "sub2": {"top": 0.6, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub3": {"top": 0.685, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub4": {"top": 0.773, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub5": {"top": 0.86, "left": 0.115, "width": 0.81, "height": 0.09}
+}
+
+def preprocess_echo_image(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    bilateral = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4,4))
+    enhanced = clahe.apply(bilateral)
+    _, thresh1 = cv2.threshold(enhanced, 180, 255, cv2.THRESH_BINARY_INV)
+    _, thresh = cv2.threshold(thresh1, 200, 255, cv2.THRESH_BINARY)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
+    clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    return clean
+
+def read_region(image: np.ndarray, region_key: str) -> str:
+    region = ECHO_REGIONS[region_key]
+    h, w = image.shape[:2]
+    x = int(w * region["left"])
+    y = int(h * region["top"])
+    width = int(w * region["width"])
+    height = int(h * region["height"])
+    cropped = image[y:y+height, x:x+width]
+    processed = preprocess_echo_image(cropped)
+    
+    text = pytesseract.image_to_string(processed, lang='eng', config='--psm 7').strip()
+    return text
 
 def merge_nearby_text(entries: List[Tuple[int, int, str, int, int]]) -> List[str]:
     entries.sort()
@@ -184,9 +199,12 @@ def clean_lines(text_lines: List[str]) -> List[str]:
     return cleaned
 
 def process_echo(image: np.ndarray):
-    entries = read_and_crop_image(image)
-    text_lines = merge_nearby_text(entries)
+    name = read_region(image, "name")
+    level = read_region(image, "level")
+    main_stat = read_region(image, "main")
+    sub_stats = [read_region(image, f"sub{i}") for i in range(1, 6)]
     
+    text_lines = [name, level, main_stat] + sub_stats
     text_lines = clean_lines(text_lines)
     print("OCR Output:")
     for line in text_lines:
