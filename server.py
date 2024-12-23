@@ -7,17 +7,15 @@ import cv2
 import numpy as np
 import base64
 from concurrent.futures import ProcessPoolExecutor, TimeoutError
-import multiprocessing
 from typing import Optional, List
 from echo import process_echo
 from contextlib import asynccontextmanager
 import time
 from collections import defaultdict
 import os
-import sys
 from io import StringIO
 
-MAX_WORKERS = max(2, multiprocessing.cpu_count() - 1)
+MAX_WORKERS = 6
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
@@ -45,9 +43,61 @@ class OCRResponse(BaseModel):
 
 class APIStatus(BaseModel):
     status: str = "running"
-    version: str = "1.0.0"
     endpoints: dict = {
-        "ocr": "/api/ocr"
+        "ocr": {
+            "path": "/api/ocr",
+            "method": "POST",
+            "request": {
+                "type": "object",
+                "properties": {
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "base64",
+                            "description": "Base64 encoded image string"
+                        }
+                    }
+                },
+                "required": ["images"]
+            },
+            "response": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "success": {"type": "boolean"},
+                        "analysis": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string", "enum": ["Echo"]},
+                                "name": {"type": "string"},
+                                "element": {"type": "string"},
+                                "echoLevel": {"type": "string"},
+                                "main": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "value": {"type": "string"}
+                                    }
+                                },
+                                "subs": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "value": {"type": "string"}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "error": {"type": "string", "optional": True}
+                    }
+                }
+            }
+        }
     }
 
 @asynccontextmanager
@@ -110,6 +160,45 @@ async def process_echo_image(image_bytes: bytes):
 async def homepage():
     return APIStatus()
 
+async def process_batch_parallel(image_strings: List[str]) -> List[dict]:
+    try:
+        images = []
+        for img_str in image_strings:
+            if ',' in img_str:
+                img_str = img_str.split(',')[1]
+            img_bytes = base64.b64decode(img_str)
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                raise ValueError("Failed to decode image")
+            images.append(img)
+            
+        loop = asyncio.get_event_loop()
+        tasks = []
+        for img in images:
+            future = loop.run_in_executor(executor, process_echo, img)
+            tasks.append(asyncio.wait_for(future, timeout=PROCESS_TIMEOUT))
+            
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        final_results = []
+        for result in results:
+            if isinstance(result, Exception):
+                final_results.append({
+                    "success": False,
+                    "error": str(result)
+                })
+            else:
+                final_results.append(result)
+                
+        return final_results
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Batch processing error: {str(e)}"
+        )
+
 @app.post("/api/ocr", response_model=List[OCRResponse])
 async def process_image_request(request: Request, image_data: ImageRequest):
     try:
@@ -118,15 +207,7 @@ async def process_image_request(request: Request, image_data: ImageRequest):
         print(f"Batch request with {len(image_data.images)} images")
         print("=================================\n")
         
-        results = []
-        for image_str in image_data.images:
-            if ',' in image_str:
-                image_str = image_str.split(',')[1]
-                
-            image_bytes = base64.b64decode(image_str)
-            result = await process_echo_image(image_bytes)
-            results.append(result)
-            
+        results = await process_batch_parallel(image_data.images)
         return results
         
     except Exception as e:
