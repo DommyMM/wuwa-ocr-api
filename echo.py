@@ -7,6 +7,14 @@ from rapidfuzz import process
 from rapidfuzz.utils import default_process
 from rapidocr_onnxruntime import RapidOCR
 
+OCR = None
+
+def get_ocr():
+    global OCR
+    if OCR is None:
+        OCR = RapidOCR(lang='en')
+    return OCR
+
 BACKEND_DIR = Path(__file__).parent
 DATA_DIR = BACKEND_DIR / 'Public' / 'Data'
 
@@ -45,10 +53,7 @@ except json.JSONDecodeError as e:
     ECHO_ELEMENTS = {}
 
 def read_and_crop_image(image: np.ndarray) -> List[Tuple[int, int, str, int, int]]:
-    ocr = RapidOCR(lang='en')
-    debug_path = Path(__file__).parent / "debug.png"
-    cv2.imwrite(str(debug_path), image)
-    
+    ocr = get_ocr()
     result, _ = ocr(image)
     entries = []
     for item in result:

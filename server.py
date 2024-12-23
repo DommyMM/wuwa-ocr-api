@@ -18,7 +18,7 @@ import sys
 from io import StringIO
 
 MAX_WORKERS = max(2, multiprocessing.cpu_count() - 1)
-PROCESS_TIMEOUT = 30
+PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
 
