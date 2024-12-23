@@ -7,7 +7,6 @@ import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
 
-
 BACKEND_DIR = Path(__file__).parent
 DATA_DIR = BACKEND_DIR / 'Public' / 'Data'
 
@@ -110,6 +109,64 @@ def get_name(text_lines: List[str]) -> str:
             print(f"Matched '{raw_name}' to '{matched_name}' with score {match[1]}")
     return matched_name
 
+def get_element_circle(image: np.ndarray) -> np.ndarray:
+    h, w = image.shape[:2]
+    center_x = int(0.89270833 * w)
+    center_y = int(0.12830687 * h)
+    radius = int(0.040625 * w)
+    
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    cv2.circle(mask, (center_x, center_y), radius, 255, -1)
+    if image.shape[2] == 3:
+        result = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    else:
+        result = image.copy()
+    
+    alpha_mask = mask.copy()
+    result[:, :, 3] = alpha_mask
+    x1 = max(0, center_x - radius)
+    y1 = max(0, center_y - radius)
+    x2 = min(w, center_x + radius)
+    y2 = min(h, center_y + radius)
+    cropped = result[y1:y2, x1:x2]
+    
+    return cropped
+
+def get_element(name: str, image: np.ndarray) -> str:
+    ELEMENT_COLORS = {
+    'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
+    'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},
+    'Fusion': {'lower': np.array([0, 150, 150]), 'upper': np.array([20, 180, 255])},
+    'Havoc': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
+    'Spectro': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
+    'Glacio': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
+    'Aero': {'lower': np.array([60, 150, 210]), 'upper': np.array([80, 180, 255])},
+    'Attack': {'lower': np.array([0, 190, 120]), 'upper': np.array([5, 220, 220])},
+    'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
+    }
+    
+    possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
+    print(f"\nPossible elements for {name}: {possible_elements}")
+    
+    element_region = get_element_circle(image)
+    
+    hsv = cv2.cvtColor(element_region, cv2.COLOR_BGR2HSV)
+    
+    matches = []
+    for element in possible_elements:
+        if element in ELEMENT_COLORS:
+            color_range = ELEMENT_COLORS[element]
+            mask = cv2.inRange(hsv, color_range['lower'], color_range['upper'])
+            match_ratio = np.count_nonzero(mask) / mask.size
+            matches.append((element, match_ratio))
+            print(f"Match ratio for {element}: {match_ratio:.3f}")
+    
+    best_match = max(matches, key=lambda x: x[1]) if matches else (possible_elements[0], 0)
+    print(f"Selected element: {best_match[0]} with ratio {best_match[1]:.3f}")
+    print()
+    
+    return best_match[0]
+
 def get_level(text_lines: List[str]) -> str:
     if len(text_lines) < 2:
         return "0"
@@ -170,7 +227,7 @@ def get_subs(text_lines: List[str]) -> List[Dict]:
                     if had_percent:
                         name = f"{match[0].upper()}%"
                     else:
-                        name = match[0].upper()
+                        name = match[0].upper().replace("%", "")
                 
                 try:
                     value = float(raw_value.replace('%', ''))
@@ -179,11 +236,11 @@ def get_subs(text_lines: List[str]) -> List[Dict]:
                     
                     normalized_value = f"{closest}%" if had_percent else str(closest)
                     print(f"Value normalized: {raw_value} -> {normalized_value}")
-                    sub_stats.append({"name": name, "value": normalized_value})
+                    sub_stats.append({"name": name.replace("Resonance ", ""), "value": normalized_value})
                     continue
                 except (ValueError, KeyError):
                     print(f"Could not normalize value: {raw_value}")
-                    sub_stats.append({"name": name, "value": raw_value})
+                    sub_stats.append({"name": name.replace("Resonance ", ""), "value": raw_value})
                     continue
                 
         sub_stats.append({"name": "Unknown", "value": raw_value})
@@ -212,7 +269,7 @@ def process_echo(image: np.ndarray):
     print()
     
     name = get_name(text_lines)
-    element = ECHO_ELEMENTS.get(name, ["Unknown"])[0]
+    element = get_element(name, image)
     
     response = {
         "success": True,

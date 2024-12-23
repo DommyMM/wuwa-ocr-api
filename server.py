@@ -49,15 +49,13 @@ class APIStatus(BaseModel):
             "request": {
                 "type": "object",
                 "properties": {
-                    "images": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "format": "base64",
-                        }
+                    "image": {
+                        "type": "string",
+                        "format": "base64",
+                        "description": "Single base64 encoded image"
                     }
                 },
-                "required": ["images"]
+                "required": ["image"]
             }
         }
     }
