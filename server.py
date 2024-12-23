@@ -11,9 +11,9 @@ from typing import Optional, List
 from echo import process_echo
 from contextlib import asynccontextmanager
 import time
+from time import perf_counter
 from collections import defaultdict
 import os
-from io import StringIO
 
 MAX_WORKERS = 6
 PROCESS_TIMEOUT = 60
@@ -34,7 +34,7 @@ class RateLimiter:
         return False
 
 class ImageRequest(BaseModel):
-    images: List[str]
+    image: str  # Single image instead of List
 
 class OCRResponse(BaseModel):
     success: bool
@@ -55,58 +55,15 @@ class APIStatus(BaseModel):
                         "items": {
                             "type": "string",
                             "format": "base64",
-                            "description": "Base64 encoded image string"
                         }
                     }
                 },
                 "required": ["images"]
-            },
-            "response": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "success": {"type": "boolean"},
-                        "analysis": {
-                            "type": "object",
-                            "properties": {
-                                "type": {"type": "string", "enum": ["Echo"]},
-                                "name": {"type": "string"},
-                                "element": {"type": "string"},
-                                "echoLevel": {"type": "string"},
-                                "main": {
-                                    "type": "object",
-                                    "properties": {
-                                        "name": {"type": "string"},
-                                        "value": {"type": "string"}
-                                    }
-                                },
-                                "subs": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "name": {"type": "string"},
-                                            "value": {"type": "string"}
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "error": {"type": "string", "optional": True}
-                    }
-                }
             }
         }
     }
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
-    executor.shutdown(wait=True)
-
-app = FastAPI(lifespan=lifespan)
-executor = ProcessPoolExecutor(max_workers=MAX_WORKERS)
+app = FastAPI()
 rate_limiter = RateLimiter()
 
 app.add_middleware(
@@ -136,13 +93,13 @@ async def process_echo_image(image_bytes: bytes):
     try:
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
         if image is None:
             raise ValueError("Failed to decode image")
             
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_echo, image)
-        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
+        process_start = time.perf_counter()
+        result = process_echo(image)
+        print(f"OCR process time: {time.perf_counter() - process_start:.2f}s")
+        
         return result
         
     except TimeoutError:
@@ -160,64 +117,31 @@ async def process_echo_image(image_bytes: bytes):
 async def homepage():
     return APIStatus()
 
-async def process_batch_parallel(image_strings: List[str]) -> List[dict]:
-    try:
-        images = []
-        for img_str in image_strings:
-            if ',' in img_str:
-                img_str = img_str.split(',')[1]
-            img_bytes = base64.b64decode(img_str)
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if img is None:
-                raise ValueError("Failed to decode image")
-            images.append(img)
-            
-        loop = asyncio.get_event_loop()
-        tasks = []
-        for img in images:
-            future = loop.run_in_executor(executor, process_echo, img)
-            tasks.append(asyncio.wait_for(future, timeout=PROCESS_TIMEOUT))
-            
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        final_results = []
-        for result in results:
-            if isinstance(result, Exception):
-                final_results.append({
-                    "success": False,
-                    "error": str(result)
-                })
-            else:
-                final_results.append(result)
-                
-        return final_results
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Batch processing error: {str(e)}"
-        )
-
-@app.post("/api/ocr", response_model=List[OCRResponse])
+@app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
-    try:
-        print("\n=== New Echo Image Request(s) ===")
-        print(f"Origin: {request.headers.get('origin', 'unknown')}")
-        print(f"Batch request with {len(image_data.images)} images")
-        print("=================================\n")
+    request_start = time.perf_counter()
+    print("\n=== New Echo Image Request ===")
+    print(f"Origin: {request.headers.get('origin', 'unknown')}")
+    print("=================================")
         
-        results = await process_batch_parallel(image_data.images)
-        return results
+    try:
+        image_str = image_data.image
+        if ',' in image_str:
+            image_str = image_str.split(',')[1]
+        image_bytes = base64.b64decode(image_str)
+        
+        result = await process_echo_image(image_bytes)
+        print(f"Total request time: {time.perf_counter() - request_start:.2f}s")
+        return result
         
     except Exception as e:
         print(f"Error processing request: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content=[{
+            content={
                 "success": False,
                 "error": str(e)
-            }] * len(image_data.images)
+            }
         )
 
 @app.get("/health")
