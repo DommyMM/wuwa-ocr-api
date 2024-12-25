@@ -223,9 +223,9 @@ def get_subs(text_lines: List[str]) -> List[Dict]:
                 name = match[0]
                 had_percent = "%" in raw_value
                 
-                if match[0].upper() in ["ATK", "HP", "DEF"]:
+                if match[0].upper().replace("%", "") in ["ATK", "HP", "DEF"]:
                     if had_percent:
-                        name = f"{match[0].upper()}%"
+                        name = f"{match[0].upper().replace('%','')}%"
                     else:
                         name = match[0].upper().replace("%", "")
                 

@@ -47,15 +47,8 @@ class APIStatus(BaseModel):
             "path": "/api/ocr",
             "method": "POST",
             "request": {
-                "type": "object",
-                "properties": {
-                    "image": {
-                        "type": "string",
-                        "format": "base64",
-                        "description": "Single base64 encoded image"
-                    }
-                },
-                "required": ["image"]
+                "type": "string (base64 encoded image)",
+                "description": "Fullscreen image cropped to the Echo region {'top': 0.11, 'left': 0.72, 'width': 0.25, 'height': 0.35}"
             }
         }
     }
