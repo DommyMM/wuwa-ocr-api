@@ -219,7 +219,7 @@ def get_subs(text_lines: List[str]) -> List[Dict]:
             match = process.extractOne(raw_name, list(SUB_STAT_NAMES), processor=default_process)
             print(f"Best match: '{match[0]}' with score {match[1]}")
             
-            if match and match[1] > 80:
+            if match and match[1] > 70:
                 name = match[0]
                 had_percent = "%" in raw_value
                 
@@ -236,11 +236,13 @@ def get_subs(text_lines: List[str]) -> List[Dict]:
                     
                     normalized_value = f"{closest}%" if had_percent else str(closest)
                     print(f"Value normalized: {raw_value} -> {normalized_value}")
-                    sub_stats.append({"name": name.replace("Resonance ", ""), "value": normalized_value})
+                    clean_name = name.replace("Resonance ", "").replace(" DMG Bonus", "")
+                    sub_stats.append({"name": clean_name, "value": normalized_value})
                     continue
                 except (ValueError, KeyError):
                     print(f"Could not normalize value: {raw_value}")
-                    sub_stats.append({"name": name.replace("Resonance ", ""), "value": raw_value})
+                    clean_name = name.replace("Resonance ", "").replace(" DMG Bonus", "")
+                    sub_stats.append({"name": clean_name, "value": raw_value})
                     continue
                 
         sub_stats.append({"name": "Unknown", "value": raw_value})
