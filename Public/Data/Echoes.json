@@ -1,5 +1,20 @@
 [
     {
+        "name": "Abyssal Gladius",
+        "cost": 3,
+        "elements": ["Midnight", "Tidebreaking"]
+    },
+    {
+        "name": "Abyssal Mercator",
+        "cost": 3,
+        "elements": ["Frosty", "Radiance"]
+    },
+    {
+        "name": "Abyssal Patricius",
+        "cost": 3,
+        "elements": ["Frosty", "Empyrean"]
+    },
+    {
         "name": "Aero Predator",
         "cost": 1,
         "elements": ["Aero", "Electro"]
@@ -30,9 +45,34 @@
         "elements": ["Healing", "Attack"]
     },
     {
+        "name": "Chest Mimic",
+        "cost": 1,
+        "elements": ["Frosty", "Midnight", "Empyrean"]
+    },
+    {
         "name": "Chirpuff",
         "cost": 1,
         "elements": ["Aero", "Havoc"]
+    },
+    {
+        "name": "Chop Chop",
+        "cost": 3,
+        "elements": ["Empyrean", "Tidebreaking"]
+    },
+    {
+        "name": "Chop Chop Headless",
+        "cost": 1,
+        "elements": ["Radiance", "Tidebreaking"]
+    },
+    {
+        "name": "Chop Chop Leftless",
+        "cost": 1,
+        "elements": ["Frosty", "Tidebreaking"]
+    },
+    {
+        "name": "Chop Chop Rightless",
+        "cost": 1,
+        "elements": ["Frosty", "Tidebreaking"]
     },
     {
         "name": "Clang Bang",
@@ -50,6 +90,11 @@
         "elements": ["Spectro", "ER", "Healing"]
     },
     {
+        "name": "Cuddle Wuddle",
+        "cost": 3,
+        "elements": ["Fusion", "Electro", "Frosty", "Midnight"]
+    },
+    {
         "name": "Cyan-Feathered Heron",
         "cost": 3,
         "elements": ["Aero", "Spectro"]
@@ -58,6 +103,21 @@
         "name": "Diamondclaw",
         "cost": 1,
         "elements": ["ER", "Attack"]
+    },
+    {
+        "name": "Diggy Duggy",
+        "cost": 1,
+        "elements": ["Radiance", "Tidebreaking"]
+    },
+    {
+        "name": "Diurnus Knight",
+        "cost": 3,
+        "elements": ["Radiance", "Tidebreaking"]
+    },
+    {
+        "name": "Dragon of Dirge",
+        "cost": 4,
+        "elements": ["Tidebreaking"]
     },
     {
         "name": "Dreamless",
@@ -80,6 +140,11 @@
         "elements": ["Glacio", "Havoc"]
     },
     {
+        "name": "Fae Ignis",
+        "cost": 1,
+        "elements": ["Radiance", "Midnight"]
+    },
+    {
         "name": "Fallacy of No Return",
         "cost": 4,
         "elements": ["Healing"]
@@ -100,6 +165,11 @@
         "elements": ["Electro", "Attack"]
     },
     {
+        "name": "Frostscourge Stalker",
+        "cost": 1,
+        "elements": ["Radiance", "Midnight"]
+    },
+    {
         "name": "Fusion Dreadmane",
         "cost": 1,
         "elements": ["Healing", "Fusion"]
@@ -113,6 +183,11 @@
         "name": "Fusion Warrior",
         "cost": 1,
         "elements": ["Aero", "Electro", "Fusion"]
+    },
+    {
+        "name": "Galescourge Stalker",
+        "cost": 1,
+        "elements": ["Frosty", "Empyrean"]
     },
     {
         "name": "Glacio Dreadmane",
@@ -148,6 +223,16 @@
         "name": "Havoc Warrior",
         "cost": 1,
         "elements": ["Spectro", "Havoc"]
+    },
+    {
+        "name": "Hecate",
+        "cost": 4,
+        "elements": ["Empyrean"]
+    },
+    {
+        "name": "Hocus Pocus",
+        "cost": 1,
+        "elements": ["Frosty", "Empyrean"]
     },
     {
         "name": "Hoartoise",
@@ -195,6 +280,16 @@
         "elements": ["Spectro"]
     },
     {
+        "name": "Lorelei",
+        "cost": 4,
+        "elements": ["Midnight"]
+    },
+    {
+        "name": "Lottie Lost",
+        "cost": 1,
+        "elements": ["Spectro", "ER", "Attack", "Frosty", "Tidebreaking"]
+    },
+    {
         "name": "Lumiscale Construct",
         "cost": 3,
         "elements": ["Electro", "Glacio"]
@@ -210,6 +305,21 @@
         "elements": ["Spectro"]
     },
     {
+        "name": "Nimbus Wraith",
+        "cost": 1,
+        "elements": ["Midnight", "Empyrean"]
+    },
+    {
+        "name": "Nocturnus Knight",
+        "cost": 3,
+        "elements": ["Midnight", "Empyrean"]
+    },
+    {
+        "name": "Questless Knight",
+        "cost": 3,
+        "elements": ["Frosty", "Midnight"]
+    },
+    {
         "name": "Rocksteady Guardian",
         "cost": 3,
         "elements": ["Spectro", "Healing"]
@@ -223,6 +333,11 @@
         "name": "Sabyr Boar",
         "cost": 1,
         "elements": ["Aero", "Glacio", "ER"]
+    },
+    {
+        "name": "Sentry Construct",
+        "cost": 4,
+        "elements": ["Frosty"]
     },
     {
         "name": "Snip Snap",
@@ -285,6 +400,16 @@
         "elements": ["ER", "Fusion"]
     },
     {
+        "name": "Vitreum Dancer",
+        "cost": 3,
+        "elements": ["Radiance", "Empyrean"]
+    },
+    {
+        "name": "Voltscourge Stalker",
+        "cost": 1,
+        "elements": ["Midnight", "Empyrean"]
+    },
+    {
         "name": "Whiff Whaff",
         "cost": 1,
         "elements": ["Aero", "ER", "Healing"]
@@ -298,5 +423,40 @@
         "name": "Zig Zag",
         "cost": 1,
         "elements": ["Spectro", "ER", "Attack"]
+    },
+    {
+        "name": "Nightmare Crownless",
+        "cost": 4,
+        "elements": ["Havoc"]
+    },
+    {
+        "name": "Nightmare Feilian Beringal",
+        "cost": 4,
+        "elements": ["Aero"]
+    },
+    {
+        "name": "Nightmare Impermanence Heron",
+        "cost": 4,
+        "elements": ["Midnight"]
+    },
+    {
+        "name": "Nightmare Inferno Rider",
+        "cost": 4,
+        "elements": ["Fusion"]
+    },
+    {
+        "name": "Nightmare Mourning Aix",
+        "cost": 4,
+        "elements": ["Radiance"]
+    },
+    {
+        "name": "Nightmare Tempest Mephis",
+        "cost": 4,
+        "elements": ["Electro", "Empyrean"]
+    },
+    {
+        "name": "Nightmare Thundering Mephis",
+        "cost": 4,
+        "elements": ["Electro"]
     }
 ]

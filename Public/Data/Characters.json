@@ -36,6 +36,18 @@
         "ER": 100
     },
     {
+        "name": "Carlotta",
+        "weaponType": "Pistol",
+        "element": "Glacio",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 996,
+        "ATK": 37,
+        "DEF": 98,
+        "ER": 100
+    },
+    {
         "name": "Camellya",
         "weaponType": "Sword",
         "element": "Havoc",
@@ -189,6 +201,18 @@
         "HP": 912,
         "ATK": 30,
         "DEF": 112,
+        "ER": 100
+    },
+    {
+        "name": "Roccia",
+        "weaponType": "Gauntlet",
+        "element": "Havoc",
+        "Bonus1": "Crit DMG",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 980,
+        "ATK": 30,
+        "DEF": 98,
         "ER": 100
     },
     {
