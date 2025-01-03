@@ -142,7 +142,12 @@ def get_element(name: str, image: np.ndarray) -> str:
     'Glacio': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
     'Aero': {'lower': np.array([60, 150, 210]), 'upper': np.array([80, 180, 255])},
     'Attack': {'lower': np.array([0, 190, 120]), 'upper': np.array([5, 220, 220])},
-    'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
+    'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])},
+    'Empyrean': {'lower': np.array([90, 90, 210]), 'upper': np.array([110, 130, 255])},
+    'Frosty': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
+    'Midnight': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
+    'Radiance': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
+    'Tidebreaking': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
     }
     
     possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
@@ -205,47 +210,59 @@ def get_main(text_lines: List[str]) -> Dict:
     return {"name": "Unknown", "value": value}
 
 def get_subs(text_lines: List[str]) -> List[Dict]:
+    if not text_lines:
+        return []
+        
     sub_lines = text_lines[-5:] if len(text_lines) >= 5 else text_lines[3:]
     sub_stats = []
     
     for i, line in enumerate(sub_lines, 1):
-        last_space = line.rindex(' ')
-        raw_name = line[:last_space].strip()
-        raw_value = line[last_space:].strip()
-        
-        print(f"\nSub {i}: '{line}'")
-        
-        if SUB_STAT_NAMES:
-            match = process.extractOne(raw_name, list(SUB_STAT_NAMES), processor=default_process)
-            print(f"Best match: '{match[0]}' with score {match[1]}")
+        if not line or not line.strip() or ' ' not in line:
+            continue
             
-            if match and match[1] > 70:
-                name = match[0]
-                had_percent = "%" in raw_value
+        try:
+            last_space = line.rindex(' ')
+            raw_name = line[:last_space].strip()
+            raw_value = line[last_space:].strip()
+            
+            if not raw_name or not raw_value:
+                continue
                 
-                if match[0].upper().replace("%", "") in ["ATK", "HP", "DEF"]:
-                    if had_percent:
-                        name = f"{match[0].upper().replace('%','')}%"
-                    else:
-                        name = match[0].upper().replace("%", "")
+            print(f"\nSub {i}: '{line}'")
+            
+            if SUB_STAT_NAMES:
+                match = process.extractOne(raw_name, list(SUB_STAT_NAMES), processor=default_process)
+                print(f"Best match: '{match[0]}' with score {match[1]}")
                 
-                try:
-                    value = float(raw_value.replace('%', ''))
-                    valid_values = [float(v) for v in SUB_STATS[name]]
-                    closest = min(valid_values, key=lambda x: abs(x - value))
+                if match and match[1] > 70:
+                    name = match[0]
+                    had_percent = "%" in raw_value
                     
-                    normalized_value = f"{closest}%" if had_percent else str(closest)
-                    print(f"Value normalized: {raw_value} -> {normalized_value}")
-                    clean_name = name.replace("Resonance ", "").replace(" DMG Bonus", "")
-                    sub_stats.append({"name": clean_name, "value": normalized_value})
-                    continue
-                except (ValueError, KeyError):
-                    print(f"Could not normalize value: {raw_value}")
-                    clean_name = name.replace("Resonance ", "").replace(" DMG Bonus", "")
-                    sub_stats.append({"name": clean_name, "value": raw_value})
-                    continue
-                
-        sub_stats.append({"name": "Unknown", "value": raw_value})
+                    if match[0].upper().replace("%", "") in ["ATK", "HP", "DEF"]:
+                        if had_percent:
+                            name = f"{match[0].upper().replace('%','')}%"
+                        else:
+                            name = match[0].upper().replace("%", "")
+                    
+                    try:
+                        clean_value = raw_value.replace('%', '')
+                        valid_values = [str(v) for v in SUB_STATS[name]]
+                        match = process.extractOne(clean_value, valid_values)
+                        print(f"Value matched: {clean_value} -> {match[0]} (score: {match[1]})")
+                        
+                        normalized_value = f"{match[0]}%" if had_percent else match[0]
+                        clean_name = name.replace("Resonance ", "").replace(" DMG Bonus", "")
+                        sub_stats.append({"name": clean_name, "value": normalized_value})
+                        continue
+                    except (ValueError, KeyError) as e:
+                        print(f"Value normalization error: {e}")
+                        sub_stats.append({"name": "Unknown", "value": raw_value})
+                        continue
+            
+            sub_stats.append({"name": "Unknown", "value": raw_value})
+            
+        except (ValueError, AttributeError):
+            continue
     
     return sub_stats
 
