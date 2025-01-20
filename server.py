@@ -8,6 +8,7 @@ import base64
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from typing import Optional
 from echo import process_echo
+from card import process_card
 import time
 from collections import defaultdict
 import os
@@ -34,6 +35,7 @@ class RateLimiter:
 
 class ImageRequest(BaseModel):
     image: str
+    type: str
 
 class OCRResponse(BaseModel):
     success: bool
@@ -47,8 +49,9 @@ class APIStatus(BaseModel):
             "path": "/api/ocr",
             "method": "POST",
             "request": {
-                "type": "string (base64 encoded image)",
-                "description": "Fullscreen image cropped to the Echo region {'top': 0.11, 'left': 0.72, 'width': 0.25, 'height': 0.35}"
+                "image": "string (base64 encoded image)",
+                "type": "string ('echo' or 'import')",
+                "description": "For echo: Fullscreen image cropped to the Echo region"
             }
         }
     }
@@ -107,6 +110,24 @@ async def process_echo_image(image_bytes: bytes):
             status_code=400,
             detail=f"Image processing error: {str(e)}"
         )
+
+async def process_card_image(image_bytes: bytes):
+    try:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Failed to decode image")
+        
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(executor, process_card, image)
+        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
+        return result
+            
+    except TimeoutError:
+        raise HTTPException(status_code=408, detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
+
 @app.get("/", response_model=APIStatus)
 async def homepage():
     return APIStatus()
@@ -114,7 +135,7 @@ async def homepage():
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
     request_start = time.perf_counter()
-    print("\n=== New Echo Image Request ===")
+    print(f"\n=== New {image_data.type.capitalize()} Image Request ===")
     print(f"Origin: {request.headers.get('origin', 'unknown')}")
     print("=================================")
         
@@ -124,7 +145,19 @@ async def process_image_request(request: Request, image_data: ImageRequest):
             image_str = image_str.split(',')[1]
         image_bytes = base64.b64decode(image_str)
         
-        result = await process_echo_image(image_bytes)
+        if image_data.type == "echo":
+            result = await process_echo_image(image_bytes)
+        elif image_data.type == "import":
+            result = await process_card_image(image_bytes)
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": f"Unsupported type: {image_data.type}"
+                }
+            )
+            
         print(f"Total request time: {time.perf_counter() - request_start:.2f}s")
         return result
         
