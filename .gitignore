@@ -4,3 +4,4 @@ venv/
 .env
 *.png
 hsv.py
+*.json

@@ -8,3 +8,5 @@ Pillow==10.4.0
 pytesseract==0.3.10
 pydantic==2.7.1
 rapidfuzz==3.10.1
+azure-cognitiveservices-vision-computervision==0.9.0
+python-dotenv==1.0.0
