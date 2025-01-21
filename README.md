@@ -1,14 +1,15 @@
-# Wuthering Waves Echo Scanner Backend
+# Wuthering Waves Scanner Backend
 
-FastAPI-based backend service for analyzing Echo screenshots from Wuthering Waves. OCR (Optical Character Recognition) and element detection capabilities to extract Echo information from screenshots. 
+FastAPI-based backend service for analyzing screenshots from Wuthering Waves. Features OCR (Optical Character Recognition) and element detection capabilities to extract information from both Echo screenshots and character cards. 
 Currently hosted at https://ocr.wuwabuilds.moe/
 
 ## Features
 
-- Screenshot analysis using OCR (Tesseract)
+- Screenshot analysis using multiple OCR engines (RapidOCR and Tesseract)
 - Element detection via HSV color analysis
 - Name validation and matching with rapidfuzz
 - Stat normalization against known valid values
+- Character and weapon validation
 - Rate limiting (60 requests per minute per IP)
 - CORS support for web integration
 - Parallel processing with timeout protection
@@ -29,16 +30,17 @@ Server will start on port 5000 by default (configurable via PORT environment var
 ## API Endpoints
 
 ### `POST /api/ocr`
-Process an Echo screenshot.
+Process screenshots with type parameter to specify the processing pipeline.
 
 Request body:
 ```json
 {
-    "image": "base64_encoded_image_string"
+    "image": "base64_encoded_image_string",
+    "type": "echo | import"
 }
 ```
 
-Response:
+#### Echo Response (type: "echo"):
 ```json
 {
     "success": true,
@@ -59,6 +61,49 @@ Response:
             // ... up to 5 substats
         ]
     }
+}
+```
+
+#### Character Card Response (type: "import"):
+```json
+{
+    "character": {
+        "name": "Character Name",
+        "level": 90
+    },
+    "watermark": {
+        "username": "Player Name",
+        "uid": 500000000
+    },
+    "weapon": {
+        "name": "Weapon Name",
+        "level": 90
+    },
+    "fortes": [
+        "10", "10", "10", "10", "10"
+    ],
+    "echoes": [
+        {
+            "main": {
+                "name": "Main Stat",
+                "value": "Value"
+            },
+            "substats": [
+                {
+                    "name": "Substat Name",
+                    "value": "Value"
+                }
+                // ... up to 5 substats
+            ],
+            "element": {
+                "primary": "Element Type",
+                "secondary": "Element Type",
+                "primary_ratio": 0.85,
+                "secondary_ratio": 0.15
+            }
+        }
+        // ... 5 echoes total
+    ]
 }
 ```
 
@@ -83,5 +128,5 @@ API documentation and status.
 ## Known Limitations
 
 - Only handles English for now
-- Image must be a screenshot of an Echo
-- Assumes the crop is of the region {"top": 0.11, "left": 0.72, "width": 0.25, "height": 0.35} from a full screenshot
+- For echo type: Image must be a screenshot of an individual Echo
+- For import type: Image must be a full screenshot from the character builder
