@@ -20,8 +20,6 @@ except (FileNotFoundError, json.JSONDecodeError):
     print("Warning: Characters.json not found or invalid")
     CHARACTER_NAMES = []
 
-OCR_INSTANCES = {}
-
 ELEMENT_REGIONS = {
     "element1": {"x1": 0.138, "y1": 0.611, "x2": 0.166, "y2": 0.663},
     "element2": {"x1": 0.331, "y1": 0.610, "x2": 0.361, "y2": 0.665},
@@ -29,12 +27,6 @@ ELEMENT_REGIONS = {
     "element4": {"x1": 0.722, "y1": 0.611, "x2": 0.751, "y2": 0.665},
     "element5": {"x1": 0.917, "y1": 0.611, "x2": 0.947, "y2": 0.665}
 }
-
-def init_ocr_instances():
-    """Initialize OCR pool"""
-    global OCR_INSTANCES
-    for region in ["character"] + [f"echo{i}" for i in range(1,6)]:
-        OCR_INSTANCES[region] = RapidOCR(lang='en')
 
 def preprocess_region(image):
     """Lighter preprocessing to preserve text clarity"""
@@ -46,23 +38,15 @@ def preprocess_region(image):
     
     return thresh
 
-def ocr_with_rapid(image, region_name):
-    """Use dedicated RapidOCR instance"""
-    rapid = OCR_INSTANCES[region_name]
-    result, _ = rapid(image)
-    if result:
-        text_only = []
-        for box, text, score in result:
-            text_only.append(text)
-        return "\n".join(text_only)
-    return ""
-
 def ocr_region(name, image):
-    """Choose OCR engine based on region type"""
+    """Create OCR instance per request"""
     if name in ["character"] or name.startswith("echo"):
-        return ocr_with_rapid(image, name)
-    else:
-        return pytesseract.image_to_string(image)
+        ocr = RapidOCR(lang='en')
+        result, _ = ocr(image)
+        if result:
+            return "\n".join(text for _, text, _ in result)
+        return ""
+    return pytesseract.image_to_string(image)
 
 def clean_value(value: str) -> str:
     """Standardize value format"""
@@ -235,58 +219,67 @@ def process_card(image):
     if image is None:
         return {"success": False, "error": "Failed to process image"}
     
-    # Save debug image
-    debug_dir = Path(__file__).parent / "debug"
-    debug_dir.mkdir(exist_ok=True)
-    
-    # Process each region
-    results = {}
-    for name, region in REGIONS.items():
-        # Extract region
-        roi = image[
-            int(region["y1"]):int(region["y2"]), 
-            int(region["x1"]):int(region["x2"])
-        ]
+    try:
+        # Save debug image
+        debug_dir = Path(__file__).parent / "debug"
+        debug_dir.mkdir(exist_ok=True)
         
-        # Preprocess region
-        processed = preprocess_region(roi)
+        # Process each region
+        results = {}
+        for name, region in REGIONS.items():
+            # Extract region
+            roi = image[
+                int(region["y1"]):int(region["y2"]), 
+                int(region["x1"]):int(region["x2"])
+            ]
+            
+            # Preprocess region
+            processed = preprocess_region(roi)
+            
+            # Save region debug image
+            cv2.imwrite(str(debug_dir / f"{name}_region.png"), processed)
+            
+            # OCR region with appropriate engine
+            text = ocr_region(name, processed)
+            cleaned_text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
+            
+            # Parse region text based on type
+            results[name] = parse_region_text(name, cleaned_text)
         
-        # Save region debug image
-        cv2.imwrite(str(debug_dir / f"{name}_region.png"), processed)
+        # Save element regions for debugging
+        for i in range(1, 6):
+            element_key = f"element{i}"
+            element_roi = get_element_region(image, element_key)
+            cv2.imwrite(str(debug_dir / f"{element_key}_region.png"), element_roi)
         
-        # OCR region with appropriate engine
-        text = ocr_region(name, processed)
-        cleaned_text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
-        
-        # Parse region text based on type
-        results[name] = parse_region_text(name, cleaned_text)
-    
-    # Save element regions for debugging
-    for i in range(1, 6):
-        element_key = f"element{i}"
-        element_roi = get_element_region(image, element_key)
-        cv2.imwrite(str(debug_dir / f"{element_key}_region.png"), element_roi)
-    
-    # Create echo array with elements
-    echo_results = []
-    for i in range(1, 6):
-        echo_key = f"echo{i}"
-        element_roi = get_element_region(image, f"element{i}")
-        element_data = determine_element(element_roi)
-        
-        echo_data = results.get(echo_key, {})
-        echo_results.append({
-            "main": echo_data.get("main", {}),
-            "substats": echo_data.get("substats", []),
-            "element": element_data
-        })
-    return {
-        "character": results["character"],
-        "watermark": results["watermark"],
-        "weapon": results["weapon"],
-        "fortes": results["forte"],
-        "echoes": echo_results
-    }
+        # Create echo array with elements
+        echo_results = []
+        for i in range(1, 6):
+            echo_key = f"echo{i}"
+            element_roi = get_element_region(image, f"element{i}")
+            element_data = determine_element(element_roi)
+            
+            echo_data = results.get(echo_key, {})
+            echo_results.append({
+                "main": echo_data.get("main", {}),
+                "substats": echo_data.get("substats", []),
+                "element": element_data
+            })
+        return {
+            "success": True,
+            "analysis": {
+                "character": results["character"],
+                "watermark": results["watermark"],
+                "weapon": results["weapon"],
+                "fortes": results["forte"],
+                "echoes": echo_results
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 def format_results(results):
     """Format results with proper indentation"""
@@ -315,7 +308,6 @@ def format_results(results):
             print(f"    {value}")
 
 if __name__ == "__main__":
-    init_ocr_instances()
     image_path = Path(__file__).parent / "wuwa1.png"
     
     if not image_path.exists():

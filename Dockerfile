@@ -30,7 +30,7 @@ RUN git clone https://github.com/tesseract-ocr/tesseract.git && \
     rm -rf tesseract && \
     mkdir -p /usr/local/share/tessdata && \
     wget -P /usr/local/share/tessdata https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata && \
-    ls -la /app/Public/Data/*.json && \
+    ls -la /app/Data/*.json && \
     tesseract --version && \
     tesseract --list-langs
 
