@@ -111,7 +111,7 @@ async def process_echo_image(image_bytes: bytes):
             detail=f"Image processing error: {str(e)}"
         )
 
-async def process_card_image(image_bytes: bytes):
+async def process_card_image(image_bytes: bytes, region: str):
     try:
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -119,7 +119,7 @@ async def process_card_image(image_bytes: bytes):
             raise ValueError("Failed to decode image")
         
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_card, image)
+        future = loop.run_in_executor(executor, process_card, image, region)
         result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
         return result
             
@@ -128,9 +128,6 @@ async def process_card_image(image_bytes: bytes):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
 
-@app.get("/", response_model=APIStatus)
-async def homepage():
-    return APIStatus()
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
@@ -147,8 +144,9 @@ async def process_image_request(request: Request, image_data: ImageRequest):
         
         if image_data.type == "echo":
             result = await process_echo_image(image_bytes)
-        elif image_data.type == "import":
-            result = await process_card_image(image_bytes)
+        elif image_data.type.startswith("import-"):
+            region = image_data.type.replace("import-", "")
+            result = await process_card_image(image_bytes, region)
         else:
             return JSONResponse(
                 status_code=400,
@@ -170,6 +168,10 @@ async def process_image_request(request: Request, image_data: ImageRequest):
                 "error": str(e)
             }
         )
+
+@app.get("/", response_model=APIStatus)
+async def homepage():
+    return APIStatus()
 
 @app.get("/health")
 async def health_check():
