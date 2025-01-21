@@ -8,7 +8,7 @@ from rapidfuzz import process
 from rapidfuzz.utils import default_process
 
 BACKEND_DIR = Path(__file__).parent
-DATA_DIR = BACKEND_DIR / 'Public' / 'Data'
+DATA_DIR = BACKEND_DIR / 'Data'
 
 ORIGINAL_IMAGE = None
 
@@ -53,6 +53,23 @@ ECHO_REGIONS = {
     "sub3": {"top": 0.685, "left": 0.115, "width": 0.81, "height": 0.09},
     "sub4": {"top": 0.773, "left": 0.115, "width": 0.81, "height": 0.09},
     "sub5": {"top": 0.86, "left": 0.115, "width": 0.81, "height": 0.09}
+}
+
+ELEMENT_COLORS = {
+'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
+'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},
+'Fusion': {'lower': np.array([0, 150, 150]), 'upper': np.array([20, 180, 255])},
+'Havoc': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
+'Spectro': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
+'Glacio': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
+'Aero': {'lower': np.array([60, 150, 210]), 'upper': np.array([80, 180, 255])},
+'Attack': {'lower': np.array([0, 190, 120]), 'upper': np.array([5, 220, 220])},
+'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])},
+'Empyrean': {'lower': np.array([90, 90, 210]), 'upper': np.array([110, 130, 255])},
+'Frosty': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
+'Midnight': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
+'Radiance': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
+'Tidebreaking': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
 }
 
 def preprocess_echo_image(image):
@@ -133,23 +150,6 @@ def get_element_circle(image: np.ndarray) -> np.ndarray:
     return cropped
 
 def get_element(name: str, image: np.ndarray) -> str:
-    ELEMENT_COLORS = {
-    'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
-    'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},
-    'Fusion': {'lower': np.array([0, 150, 150]), 'upper': np.array([20, 180, 255])},
-    'Havoc': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
-    'Spectro': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
-    'Glacio': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
-    'Aero': {'lower': np.array([60, 150, 210]), 'upper': np.array([80, 180, 255])},
-    'Attack': {'lower': np.array([0, 190, 120]), 'upper': np.array([5, 220, 220])},
-    'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])},
-    'Empyrean': {'lower': np.array([90, 90, 210]), 'upper': np.array([110, 130, 255])},
-    'Frosty': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
-    'Midnight': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
-    'Radiance': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
-    'Tidebreaking': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
-    }
-    
     possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
     print(f"\nPossible elements for {name}: {possible_elements}")
     

@@ -1,0 +1,742 @@
+{
+    "Rectifiers": [
+        {
+            "name": "Cosmic Ripples",
+            "id": "21050015",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "ATK",
+            "base_main": "11.9",
+            "passive": "ER",
+            "passive_stat": "12.8"
+        },
+        {
+            "name": "Rime-Draped Sprouts",
+            "id": "21050026",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit DMG",
+            "base_main": "16",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Stellar Symphony",
+            "id": "21050027",
+            "rarity": "5-star",
+            "ATK": "33",
+            "main_stat": "ER",
+            "base_main": "17.1",
+            "passive": "HP%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Stringmaster",
+            "id": "21050016",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit Rate",
+            "base_main": "8",
+            "passive": "Attribute",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Augment",
+            "id": "21050074",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit Rate",
+            "base_main": "4.5"
+        },
+        {
+            "name": "Call of the Abyss",
+            "id": "21050017",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Comet Flare",
+            "id": "21050064",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "HP",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Fusion Accretion",
+            "id": "21050084",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Jinzhou Keeper",
+            "id": "21050044",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ATK",
+            "base_main": "8.1"
+        },
+        {
+            "name": "Rectifier#25",
+            "id": "21050034",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Waltz in Masquerade",
+            "id": "21050094",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
+        },
+        {
+            "name": "Guardian Rectifier",
+            "id": "21050053",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4",
+            "passive": "Basic Attack",
+            "passive_stat": "12",
+            "passive2": "Heavy Attack",
+            "passive_stat2": "12"
+        },
+        {
+            "name": "Originite Type V",
+            "id": "21050023",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "HP",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Rectifier of Night",
+            "id": "21050013",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Rectifier of Voyager",
+            "id": "21050043",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ER",
+            "base_main": "7.2"
+        },
+        {
+            "name": "Variation",
+            "id": "21050024",
+            "rarity": "3-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Tyro Rectifier",
+            "id": "21050012",
+            "rarity": "2-star",
+            "ATK": "22",
+            "main_stat": "ATK",
+            "base_main": "3.2",
+            "passive": "ATK%",
+            "passive_stat": "5"
+        },
+        {
+            "name": "Training Rectifier",
+            "id": "21050011",
+            "rarity": "1-star",
+            "ATK": "20",
+            "main_stat": "ATK",
+            "base_main": "2.5",
+            "passive": "ATK%",
+            "passive_stat": "4"
+        }
+    ],
+    "Pistols": [
+        {
+            "name": "Static Mist",
+            "id": "21030015",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ER",
+            "passive_stat": "12.8"
+        },
+        {
+            "name": "The Last Dance",
+            "id": "21030017",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit DMG",
+            "base_main": "16",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Cadenza",
+            "id": "21030024",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Novaburst",
+            "id": "21030064",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Pistol#26",
+            "id": "21030034",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ATK",
+            "base_main": "8.1"
+        },
+        {
+            "name": "Relativistic Jet",
+            "id": "21030084",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Romance in Farewell",
+            "id": "21030094",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
+        },
+        {
+            "name": "Thunderbolt",
+            "id": "21030074",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ATK",
+            "base_main": "8.1"
+        },
+        {
+            "name": "Undying Flame",
+            "id": "21030044",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Guardian Pistols",
+            "id": "21030053",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ATK",
+            "base_main": "6.7",
+            "passive": "Skill",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Originite Type III",
+            "id": "21030023",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Pistols of Night",
+            "id": "21030013",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Pistols of Voyager",
+            "id": "21030043",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Tyro Pistols",
+            "id": "21030012",
+            "rarity": "2-star",
+            "ATK": "22",
+            "main_stat": "ATK",
+            "base_main": "3.2",
+            "passive": "ATK%",
+            "passive_stat": "5"
+        },
+        {
+            "name": "Training Pistols",
+            "id": "21030011",
+            "rarity": "1-star",
+            "ATK": "20",
+            "main_stat": "ATK",
+            "base_main": "2.5",
+            "passive": "ATK%",
+            "passive_stat": "4"
+        }
+    ],
+    "Broadblades": [
+        {
+            "name": "Ages of Harvest",
+            "id": "21010026",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "Attribute",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Lustrous Razor",
+            "id": "21010015",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "ATK",
+            "base_main": "8.1",
+            "passive": "ER",
+            "passive_stat": "12.8"
+        },
+        {
+            "name": "Verdant Summit",
+            "id": "21010016",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "Attribute",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Autumntrace",
+            "id": "21010074",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit Rate",
+            "base_main": "4.5"
+        },
+        {
+            "name": "Broadblade#41",
+            "id": "21010034",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ER",
+            "base_main": "7.2",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Dauntless Evernight",
+            "id": "21010044",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "DEF",
+            "base_main": "13.6"
+        },
+        {
+            "name": "Discord",
+            "id": "21010024",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Helios Cleaver",
+            "id": "21010064",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Meditation on Mercy",
+            "id": "21010094",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
+        },
+        {
+            "name": "Waning Redshift",
+            "id": "21010084",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Beguiling Melody",
+            "id": "21010063",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Broadblade of Night",
+            "id": "21010013",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Broadblade of Voyager",
+            "id": "21010043",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ER",
+            "base_main": "7.2"
+        },
+        {
+            "name": "Guardian Broadblade",
+            "id": "21010053",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4",
+            "passive": "Basic Attack",
+            "passive_stat": "12",
+            "passive2": "Heavy Attack",
+            "passive_stat2": "12"
+        },
+        {
+            "name": "Originite Type I",
+            "id": "21010023",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "DEF",
+            "base_main": "8.5"
+        },
+        {
+            "name": "Tyro Broadblade",
+            "id": "21010012",
+            "rarity": "2-star",
+            "ATK": "22",
+            "main_stat": "ATK",
+            "base_main": "3.2",
+            "passive": "ATK%",
+            "passive_stat": "5"
+        },
+        {
+            "name": "Training Broadblade",
+            "id": "21010011",
+            "rarity": "1-star",
+            "ATK": "20",
+            "main_stat": "ATK",
+            "base_main": "2.5",
+            "passive": "ATK%",
+            "passive_stat": "4"
+        }
+    ],
+    "Gauntlets": [
+        {
+            "name": "Abyss Surges",
+            "id": "21040015",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "ATK",
+            "base_main": "8.1",
+            "passive": "ER",
+            "passive_stat": "12.8"
+        },
+        {
+            "name": "Tragicomedy",
+            "id": "21040018",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Verity's Handle",
+            "id": "21040016",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "Attribute",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Amity Accord",
+            "id": "21040044",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "DEF",
+            "base_main": "13.6"
+        },
+        {
+            "name": "Celestial Spiral",
+            "id": "21040084",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Gauntlet#21D",
+            "id": "21040034",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ER",
+            "base_main": "8.6"
+        },
+        {
+            "name": "Hollow Mirage",
+            "id": "21040064",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Legend of Drunken Hero",
+            "id": "21040094",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
+        },
+        {
+            "name": "Marcato",
+            "id": "21040024",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Stonard",
+            "id": "21040074",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit Rate",
+            "base_main": "4.5"
+        },
+        {
+            "name": "Gauntlets of Night",
+            "id": "21040013",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Gauntlets of Voyager",
+            "id": "21040043",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "DEF",
+            "base_main": "6.8"
+        },
+        {
+            "name": "Guardian Gauntlets",
+            "id": "21040053",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "DEF",
+            "base_main": "8.5",
+            "passive": "Liberation",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Originite Type IV",
+            "id": "21040023",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "Crit DMG",
+            "base_main": "9"
+        },
+        {
+            "name": "Tyro Gauntlets",
+            "id": "21040012",
+            "rarity": "2-star",
+            "ATK": "22",
+            "main_stat": "ATK",
+            "base_main": "3.2",
+            "passive": "ATK%",
+            "passive_stat": "5"
+        },
+        {
+            "name": "Training Gauntlets",
+            "id": "21040011",
+            "rarity": "1-star",
+            "ATK": "20",
+            "main_stat": "ATK",
+            "base_main": "2.5",
+            "passive": "ATK%",
+            "passive_stat": "4"
+        }
+    ],
+    "Swords": [
+        {
+            "name": "Blazing Brilliance",
+            "id": "21020016",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Emerald of Genesis",
+            "id": "21020015",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ER",
+            "passive_stat": "12.8"
+        },
+        {
+            "name": "Red Spring",
+            "id": "21020017",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Commando of Conviction",
+            "id": "21020044",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Endless Collapse",
+            "id": "21020084",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Fables of Wisdom",
+            "id": "21020094",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
+        },
+        {
+            "name": "Lumingloss",
+            "id": "21020074",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ATK",
+            "base_main": "8.1"
+        },
+        {
+            "name": "Lunar Cutter",
+            "id": "21020064",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "ATK",
+            "base_main": "6.7"
+        },
+        {
+            "name": "Overture",
+            "id": "21020024",
+            "rarity": "4-star",
+            "ATK": "27",
+            "main_stat": "ER",
+            "base_main": "11.5"
+        },
+        {
+            "name": "Somnoire Anchor",
+            "id": "21020019",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4"
+        },
+        {
+            "name": "Sword#18",
+            "id": "21020034",
+            "rarity": "4-star",
+            "ATK": "31",
+            "main_stat": "ATK",
+            "base_main": "8.1"
+        },
+        {
+            "name": "Guardian Sword",
+            "id": "21020053",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "HP",
+            "base_main": "6.7",
+            "passive": "Skill",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Originite Type II",
+            "id": "21020023",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Sword of Night",
+            "id": "21020013",
+            "rarity": "3-star",
+            "ATK": "26",
+            "main_stat": "ATK",
+            "base_main": "5.4"
+        },
+        {
+            "name": "Sword of Voyager",
+            "id": "21020043",
+            "rarity": "3-star",
+            "ATK": "24",
+            "main_stat": "ER",
+            "base_main": "7.2"
+        },
+        {
+            "name": "Tyro Sword",
+            "id": "21020012",
+            "rarity": "2-star",
+            "ATK": "22",
+            "main_stat": "ATK",
+            "base_main": "3.2",
+            "passive": "ATK%",
+            "passive_stat": "5"
+        },
+        {
+            "name": "Training Sword",
+            "id": "21020011",
+            "rarity": "1-star",
+            "ATK": "20",
+            "main_stat": "ATK",
+            "base_main": "2.5",
+            "passive": "ATK%",
+            "passive_stat": "4"
+        }
+    ]
+}
