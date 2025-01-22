@@ -3,10 +3,9 @@ from pathlib import Path
 import pytesseract
 from rapidocr_onnxruntime import RapidOCR
 import re
-from echo import ELEMENT_COLORS, MAIN_STAT_NAMES, SUB_STATS
+from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS
 import numpy as np
 from rapidfuzz import process
-import json
 
 _global_ocr = None
 
@@ -16,15 +15,6 @@ def get_rapid_ocr():
     if _global_ocr is None:
         _global_ocr = RapidOCR(lang='en')
     return _global_ocr
-
-DATA_DIR = Path(__file__).parent / 'Data'
-try:
-    with open(DATA_DIR / 'Characters.json', 'r', encoding='utf-8') as f:
-        characters_data = json.load(f)
-        CHARACTER_NAMES = [char['name'] for char in characters_data]
-except (FileNotFoundError, json.JSONDecodeError):
-    print("Warning: Characters.json not found or invalid")
-    CHARACTER_NAMES = []
 
 ECHO_GRID = {
     "echo1": {"x1": 0.000, "x2": 0.195, "y1": 0, "y2": 1.0},
@@ -224,15 +214,12 @@ def determine_element(image):
     }
 
 def split_echo_image(image):
-    """Split full echo section into individual echo regions"""
     h, w = image.shape[:2]
     echo_regions = []
     
-    # Create debug directory if it doesn't exist
     debug_dir = Path(__file__).parent / 'debug'
     debug_dir.mkdir(exist_ok=True)
     
-    # Split and save individual regions
     for i in range(1, 6):
         region = ECHO_GRID[f"echo{i}"]
         x1 = int(w * region["x1"])
@@ -240,8 +227,10 @@ def split_echo_image(image):
         echo_img = image[:, x1:x2]
         echo_regions.append(echo_img)
         
-        # Save debug images
         cv2.imwrite(str(debug_dir / f'echo{i}.png'), echo_img)
+        
+        icon = echo_img[0:180, 0:188]
+        cv2.imwrite(str(debug_dir / f'echo{i}_icon.png'), icon)
     
     return echo_regions
 
