@@ -3,9 +3,13 @@ from pathlib import Path
 import pytesseract
 from rapidocr_onnxruntime import RapidOCR
 import re
-from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS
+from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES
 import numpy as np
 from rapidfuzz import process
+from typing import List, Tuple
+import json
+from cv2 import SIFT_create, FlannBasedMatcher
+from concurrent.futures import ThreadPoolExecutor
 
 _global_ocr = None
 
@@ -194,45 +198,64 @@ def get_element_region(image):
     
     return image[y1:y2, x1:x2]
 
-def determine_element(image):
+def determine_element(image, echo_name: str):
+    """Match element colors only against possible elements for echo"""
+    possible_elements = ECHO_ELEMENTS.get(echo_name, ["Unknown"])
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     
     matches = []
-    for element, ranges in ELEMENT_COLORS.items():
-        mask = cv2.inRange(hsv, ranges['lower'], ranges['upper'])
-        ratio = np.count_nonzero(mask) / mask.size
-        matches.append((element, ratio))
+    for element in possible_elements:
+        if element in ELEMENT_COLORS:
+            ranges = ELEMENT_COLORS[element]
+            mask = cv2.inRange(hsv, ranges['lower'], ranges['upper'])
+            ratio = np.count_nonzero(mask) / mask.size
+            matches.append((element, ratio))
     
     matches.sort(key=lambda x: x[1], reverse=True)
-    top_matches = matches[:2] if len(matches) >= 2 else matches + [("Unknown", 0)]
+    return matches[0][0] if matches else "Unknown"
+
+def match_icon(icon_img: np.ndarray) -> Tuple[str, float]:
+    """SIFT-based icon matching - returns best match"""
+    sift = SIFT_create()
+    kp1, des1 = sift.detectAndCompute(icon_img, None)
+    if des1 is None:
+        return ("No matches", 0.0)
     
-    return {
-        "primary": top_matches[0][0],
-        "secondary": top_matches[1][0],
-        "primary_ratio": float(top_matches[0][1]),
-        "secondary_ratio": float(top_matches[1][1])
-    }
+    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+    matches = []
+    
+    for name, (kp2, des2) in TEMPLATE_FEATURES.items():
+        matches_list = flann.knnMatch(des1, des2, k=2)
+        good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+        confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+        matches.append((name, confidence))
+    
+    return max(matches, key=lambda x: x[1])
 
 def split_echo_image(image):
     h, w = image.shape[:2]
+    
+    # Extract regions
     echo_regions = []
-    
-    debug_dir = Path(__file__).parent / 'debug'
-    debug_dir.mkdir(exist_ok=True)
-    
     for i in range(1, 6):
         region = ECHO_GRID[f"echo{i}"]
-        x1 = int(w * region["x1"])
-        x2 = int(w * region["x2"])
+        x1, x2 = int(w * region["x1"]), int(w * region["x2"])
         echo_img = image[:, x1:x2]
-        echo_regions.append(echo_img)
-        
-        cv2.imwrite(str(debug_dir / f'echo{i}.png'), echo_img)
-        
-        icon = echo_img[0:180, 0:188]
-        cv2.imwrite(str(debug_dir / f'echo{i}_icon.png'), icon)
+        icon = echo_img[0:182, 0:188]
+        echo_regions.append((echo_img, icon))
     
-    return echo_regions
+    # Process icons in parallel
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for _, icon in echo_regions:
+            futures.append(executor.submit(match_icon, icon))
+        
+        results = []
+        for i, future in enumerate(futures, 1):
+            name, conf = future.result()
+            results.append((name, conf))
+    
+    return [img for img, _ in echo_regions], results
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
@@ -276,19 +299,23 @@ def process_card(image, region: str):
                 "analysis": {"sequence": sequence}
             }
         elif region == "echoes":
-            echo_regions = split_echo_image(image)
+            echo_regions, icon_results = split_echo_image(image)
             all_echoes = []
             
-            for idx, echo_img in enumerate(echo_regions):
+            for idx, (echo_img, (name, confidence)) in enumerate(zip(echo_regions, icon_results)):
                 processed = preprocess_region(echo_img)
                 text = process_ocr(f"echo{idx+1}", processed)
                 cleaned_text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
                 
                 echo_data = parse_region_text(f"echo{idx+1}", cleaned_text)
                 element_region = get_element_region(echo_img)
-                element_data = determine_element(element_region)
+                element_data = determine_element(element_region, name)
                 
                 all_echoes.append({
+                    "name": {
+                        "name": name,
+                        "confidence": float(confidence)
+                    },
                     "main": echo_data.get("main", {}),
                     "substats": echo_data.get("substats", []),
                     "element": element_data

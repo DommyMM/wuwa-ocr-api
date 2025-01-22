@@ -3,6 +3,7 @@ import json
 import cv2
 import numpy as np
 from typing import Dict, List, Set
+from cv2 import SIFT_create
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
@@ -12,6 +13,7 @@ SUB_STAT_NAMES: Set[str] = set()
 ECHO_NAMES: List[str] = []
 ECHO_ELEMENTS: Dict = {}
 ICON_TEMPLATES: Dict[str, np.ndarray] = {}
+TEMPLATE_FEATURES = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
@@ -46,10 +48,19 @@ try:
         SUB_STATS = sub_data["subStats"]
         SUB_STAT_NAMES = set(SUB_STATS.keys())
 
-    # Load icon templates
+    # Initialize SIFT
+    sift = SIFT_create()
+    
+    # Load and process templates
     for icon_path in ICONS_DIR.glob('*.png'):
         img = cv2.imread(str(icon_path))
-        ICON_TEMPLATES[icon_path.stem] = img
+        scaled = cv2.resize(img, (188, 188))
+        ICON_TEMPLATES[icon_path.stem] = scaled
+        
+        # Compute SIFT features
+        kp, des = sift.detectAndCompute(scaled, None)
+        if des is not None:
+            TEMPLATE_FEATURES[icon_path.stem] = (kp, des)
 
 except (FileNotFoundError, json.JSONDecodeError) as e:
     print(f"Warning: Data loading error: {e}")
