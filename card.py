@@ -25,6 +25,15 @@ ECHO_GRID = {
     "echo5": {"x1": 0.804, "x2": 0.999, "y1": 0, "y2": 1.0}
 }
 
+SEQUENCE_REGIONS = {
+    "S1": {"center": (55, 58), "width": 30, "height": 26},
+    "S2": {"center": (130, 58), "width": 30, "height": 26},
+    "S3": {"center": (210, 58), "width": 30, "height": 26},
+    "S4": {"center": (290, 58), "width": 30, "height": 26},
+    "S5": {"center": (369, 58), "width": 30, "height": 26},
+    "S6": {"center": (449, 58), "width": 30, "height": 26}
+}
+
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
     if name in ["character"] or name.startswith("echo"):
@@ -227,12 +236,57 @@ def split_echo_image(image):
     
     return echo_regions
 
+def parse_sequence_region(image) -> int:
+    """Extract and save individual sequence regions for debugging"""
+    debug_dir = Path(__file__).parent / 'debug'
+    debug_dir.mkdir(exist_ok=True)
+    
+    # Save full sequence image
+    cv2.imwrite(str(debug_dir / 'sequence_full.png'), image)
+    
+    GRAY_HSV = {
+        'lower': np.array([0, 0, 160]),
+        'upper': np.array([40, 180, 255])
+    }
+    GRAY_THRESHOLD = 0.75
+    active_count = 0
+    
+    # Extract and save each sequence region
+    for seq_num, region in SEQUENCE_REGIONS.items():
+        center_x, center_y = region["center"]
+        half_w = region["width"] // 2
+        half_h = region["height"] // 2
+        
+        x1 = max(0, center_x - half_w)
+        x2 = min(image.shape[1], center_x + half_w)
+        y1 = max(0, center_y - half_h)
+        y2 = min(image.shape[0], center_y + half_h)
+        
+        sequence_img = image[y1:y2, x1:x2]
+        cv2.imwrite(str(debug_dir / f'{seq_num}.png'), sequence_img)
+        
+        # Calculate gray ratio
+        hsv = cv2.cvtColor(sequence_img, cv2.COLOR_BGR2HSV)
+        gray_mask = cv2.inRange(hsv, GRAY_HSV['lower'], GRAY_HSV['upper'])
+        gray_ratio = np.count_nonzero(gray_mask) / gray_mask.size
+        
+        if gray_ratio > GRAY_THRESHOLD:
+            active_count += 1
+    
+    return active_count
+
 def process_card(image, region: str):
     if image is None:
         return {"success": False, "error": "Failed to process image"}
     
     try:
-        if region == "echoes":
+        if region == "sequences":
+            sequence = parse_sequence_region(image)
+            return {
+                "success": True,
+                "analysis": {"sequence": sequence}
+            }
+        elif region == "echoes":
             echo_regions = split_echo_image(image)
             all_echoes = []
             
@@ -265,7 +319,6 @@ def process_card(image, region: str):
                 "success": True,
                 "analysis": result
             }
-            
     except Exception as e:
         return {
             "success": False,

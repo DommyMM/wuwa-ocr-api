@@ -50,8 +50,7 @@ class APIStatus(BaseModel):
             "method": "POST",
             "request": {
                 "image": "string (base64 encoded image)",
-                "type": "string ('echo' or 'import')",
-                "description": "For echo: Fullscreen image cropped to the Echo region"
+                "type": "string ('echo' or 'import')"
             }
         }
     }
