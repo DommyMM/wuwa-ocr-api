@@ -8,6 +8,15 @@ import numpy as np
 from rapidfuzz import process
 import json
 
+_global_ocr = None
+
+def get_rapid_ocr():
+    """Get or create global RapidOCR instance"""
+    global _global_ocr
+    if _global_ocr is None:
+        _global_ocr = RapidOCR(lang='en')
+    return _global_ocr
+
 DATA_DIR = Path(__file__).parent / 'Data'
 try:
     with open(DATA_DIR / 'Characters.json', 'r', encoding='utf-8') as f:
@@ -37,7 +46,7 @@ SEQUENCE_REGIONS = {
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
     if name in ["character"] or name.startswith("echo"):
-        ocr = RapidOCR(lang='en')
+        ocr = get_rapid_ocr()
         result, _ = ocr(image)
         if result:
             return "\n".join(text for _, text, _ in result)
@@ -93,7 +102,7 @@ def validate_character_name(raw_name: str) -> str:
 def parse_region_text(name, text):
     if name == "character":
         parts = [p for p in text.split() if p.strip()]
-        level = 0
+        level = 1
         for part in parts:
             if "LV." in part:
                 match = re.search(r'LV\.(\d+)', part)
@@ -127,7 +136,7 @@ def parse_region_text(name, text):
     elif name == "weapon":
         lines = text.split('\n')
         name = lines[0].strip() if lines else "Unknown"
-        level = 0
+        level = 1
         for line in lines[1:]:
             if "LV." in line:
                 match = re.search(r'LV\.(\d+)', line)
@@ -237,13 +246,7 @@ def split_echo_image(image):
     return echo_regions
 
 def parse_sequence_region(image) -> int:
-    """Extract and save individual sequence regions for debugging"""
-    debug_dir = Path(__file__).parent / 'debug'
-    debug_dir.mkdir(exist_ok=True)
-    
-    # Save full sequence image
-    cv2.imwrite(str(debug_dir / 'sequence_full.png'), image)
-    
+    """Count active sequence nodes using HSV gray detection"""
     GRAY_HSV = {
         'lower': np.array([0, 0, 160]),
         'upper': np.array([40, 180, 255])
@@ -251,7 +254,6 @@ def parse_sequence_region(image) -> int:
     GRAY_THRESHOLD = 0.75
     active_count = 0
     
-    # Extract and save each sequence region
     for seq_num, region in SEQUENCE_REGIONS.items():
         center_x, center_y = region["center"]
         half_w = region["width"] // 2
@@ -263,9 +265,7 @@ def parse_sequence_region(image) -> int:
         y2 = min(image.shape[0], center_y + half_h)
         
         sequence_img = image[y1:y2, x1:x2]
-        cv2.imwrite(str(debug_dir / f'{seq_num}.png'), sequence_img)
         
-        # Calculate gray ratio
         hsv = cv2.cvtColor(sequence_img, cv2.COLOR_BGR2HSV)
         gray_mask = cv2.inRange(hsv, GRAY_HSV['lower'], GRAY_HSV['upper'])
         gray_ratio = np.count_nonzero(gray_mask) / gray_mask.size
