@@ -4,6 +4,9 @@ import cv2
 import numpy as np
 from typing import Dict, List, Set
 from cv2 import SIFT_create
+from rapidocr_onnxruntime import RapidOCR
+
+Rapid = RapidOCR(lang='en')
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
@@ -64,18 +67,6 @@ try:
 
 except (FileNotFoundError, json.JSONDecodeError) as e:
     print(f"Warning: Data loading error: {e}")
-    
-
-ECHO_REGIONS = {
-    "name": {"top": 0.052, "left": 0.055, "width": 0.8, "height": 0.11},
-    "level": {"top": 0.23, "left": 0.08, "width": 0.1, "height": 0.08},
-    "main": {"top": 0.31, "left": 0.145, "width": 0.78, "height": 0.085},
-    "sub1": {"top": 0.53, "left": 0.115, "width": 0.81, "height": 0.08},
-    "sub2": {"top": 0.6, "left": 0.115, "width": 0.81, "height": 0.09},
-    "sub3": {"top": 0.685, "left": 0.115, "width": 0.81, "height": 0.09},
-    "sub4": {"top": 0.773, "left": 0.115, "width": 0.81, "height": 0.09},
-    "sub5": {"top": 0.86, "left": 0.115, "width": 0.81, "height": 0.09}
-}
 
 ELEMENT_COLORS = {
 'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},

@@ -1,32 +1,11 @@
 import cv2
-from pathlib import Path
 import pytesseract
-from rapidocr_onnxruntime import RapidOCR
 import re
-from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES
+from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
-from typing import List, Tuple
-import json
+from typing import Tuple
 from cv2 import SIFT_create, FlannBasedMatcher
-from concurrent.futures import ThreadPoolExecutor
-
-_global_ocr = None
-
-def get_rapid_ocr():
-    """Get or create global RapidOCR instance"""
-    global _global_ocr
-    if _global_ocr is None:
-        _global_ocr = RapidOCR(lang='en')
-    return _global_ocr
-
-ECHO_GRID = {
-    "echo1": {"x1": 0.000, "x2": 0.195, "y1": 0, "y2": 1.0},
-    "echo2": {"x1": 0.201, "x2": 0.396, "y1": 0, "y2": 1.0},
-    "echo3": {"x1": 0.402, "x2": 0.597, "y1": 0, "y2": 1.0},
-    "echo4": {"x1": 0.603, "x2": 0.798, "y1": 0, "y2": 1.0},
-    "echo5": {"x1": 0.804, "x2": 0.999, "y1": 0, "y2": 1.0}
-}
 
 SEQUENCE_REGIONS = {
     "S1": {"center": (55, 58), "width": 30, "height": 26},
@@ -37,11 +16,15 @@ SEQUENCE_REGIONS = {
     "S6": {"center": (449, 58), "width": 30, "height": 26}
 }
 
+ECHO_REGIONS = {
+    "main": {"x1": 195, "y1": 66, "x2": 366, "y2": 148},
+    "subs": {"x1": 36, "y1": 225, "x2": 362, "y2": 409}
+}
+
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
-    if name in ["character"] or name.startswith("echo"):
-        ocr = get_rapid_ocr()
-        result, _ = ocr(image)
+    if name == "character" and Rapid:
+        result, _ = Rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
         return ""
@@ -55,9 +38,6 @@ def preprocess_region(image):
     sharp = cv2.addWeighted(bilateral, 1.5, blur, -0.5, 0)
     _, thresh = cv2.threshold(sharp, 140, 255, cv2.THRESH_BINARY)
     return thresh
-
-def clean_value(value: str) -> str:
-    return value.strip().replace(" ", "")
 
 def clean_stat_name(name: str, value: str) -> str:
     name = name.strip().replace(" DMG Bonus", "")
@@ -82,7 +62,15 @@ def validate_value(value: str, stat_name: str) -> str:
         valid_values = [str(v) for v in SUB_STATS[stat_name]]
         match = process.extractOne(clean_value, valid_values)
         if match and match[1] > 70:
-            return f"{match[0]}%" if had_percent else match[0]
+            float_value = float(clean_value)
+            matched_value = float(match[0])
+            if abs(float_value - matched_value) > 2.0:
+                closest = min(SUB_STATS[stat_name], key=lambda x: abs(float_value - x))
+                if abs(float_value - closest) <= 1.0:
+                    return f"{closest}%" if had_percent else str(closest)
+            else:
+                return f"{match[0]}%" if had_percent else match[0]
+                
     except (ValueError, KeyError):
         pass
     return value
@@ -144,42 +132,28 @@ def parse_region_text(name, text):
     
     elif name.startswith("echo"):
         lines = [l.strip() for l in text.split('\n') if l.strip()]
-        pairs = []
-        current_key = None
-        previous_line = None
-        
-        for line in lines:
-            if line in ['Bonus', 'DMG Bonus']:
-                continue
-                
-            if any(c.isdigit() for c in line) or "%" in line:
-                if current_key:
-                    if len(current_key) == 1 and previous_line:
-                        current_key = previous_line
-                    pairs.append((current_key, line))
-                    current_key = None
-            else:
-                previous_line = current_key if current_key else previous_line
-                current_key = line
-        
-        if len(pairs) < 3:
+        if not lines:
             return []
         
-        # Process main stat
-        main_name, main_value = pairs[0]
-        main_value = clean_value(main_value)
+        main_parts = lines[0].rsplit(' ', 1)
+        if len(main_parts) != 2:
+            return []
+        main_name, main_value = main_parts
         main_name = clean_stat_name(main_name, main_value)
         main_name = validate_stat(main_name, MAIN_STAT_NAMES)
+        main_value = validate_value(main_value, main_name)
         
-        # Process substats (skip base stat at pairs[1])
         substats = []
-        for stat_name, stat_value in pairs[2:]:
-            value = clean_value(stat_value)
-            name = clean_stat_name(stat_name, value)
+        for line in lines[1:]:
+            parts = line.rsplit(' ', 1)
+            if len(parts) != 2:
+                continue
+                
+            stat_name, stat_value = parts
+            name = clean_stat_name(stat_name, stat_value)
             name = validate_stat(name, SUB_STATS.keys())
-            name = name.replace(" DMG Bonus", "")
-            value = validate_value(value, name)
-            substats.append({"name": name, "value": value})
+            value = validate_value(stat_value, name)
+            substats.append({"name": name.replace("DMG Bonus", ""), "value": value})
         
         return {
             "main": {"name": main_name, "value": main_value},
@@ -232,31 +206,6 @@ def match_icon(icon_img: np.ndarray) -> Tuple[str, float]:
     
     return max(matches, key=lambda x: x[1])
 
-def split_echo_image(image):
-    h, w = image.shape[:2]
-    
-    # Extract regions
-    echo_regions = []
-    for i in range(1, 6):
-        region = ECHO_GRID[f"echo{i}"]
-        x1, x2 = int(w * region["x1"]), int(w * region["x2"])
-        echo_img = image[:, x1:x2]
-        icon = echo_img[0:182, 0:188]
-        echo_regions.append((echo_img, icon))
-    
-    # Process icons in parallel
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = []
-        for _, icon in echo_regions:
-            futures.append(executor.submit(match_icon, icon))
-        
-        results = []
-        for i, future in enumerate(futures, 1):
-            name, conf = future.result()
-            results.append((name, conf))
-    
-    return [img for img, _ in echo_regions], results
-
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
     GRAY_HSV = {
@@ -287,6 +236,10 @@ def parse_sequence_region(image) -> int:
     
     return active_count
 
+def merge_stat_lines(names: list, values: list) -> str:
+    """Merge stat names with their values"""
+    return "\n".join(f"{name} {value}" for name, value in zip(names, values))
+
 def process_card(image, region: str):
     if image is None:
         return {"success": False, "error": "Failed to process image"}
@@ -298,32 +251,62 @@ def process_card(image, region: str):
                 "success": True,
                 "analysis": {"sequence": sequence}
             }
-        elif region == "echoes":
-            echo_regions, icon_results = split_echo_image(image)
-            all_echoes = []
+        elif region.startswith("echo"):
+            # Process main region
+            main_img = image[ECHO_REGIONS["main"]["y1"]:ECHO_REGIONS["main"]["y2"], ECHO_REGIONS["main"]["x1"]:ECHO_REGIONS["main"]["x2"]]
+            main_processed = preprocess_region(main_img)
+            main_lines = [l.strip() for l in pytesseract.image_to_string(main_processed).splitlines() if l.strip()]
+            main_text = f"{main_lines[0]} {main_lines[1]}" if len(main_lines) >= 2 else ""
             
-            for idx, (echo_img, (name, confidence)) in enumerate(zip(echo_regions, icon_results)):
-                processed = preprocess_region(echo_img)
-                text = process_ocr(f"echo{idx+1}", processed)
-                cleaned_text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
-                
-                echo_data = parse_region_text(f"echo{idx+1}", cleaned_text)
-                element_region = get_element_region(echo_img)
-                element_data = determine_element(element_region, name)
-                
-                all_echoes.append({
-                    "name": {
-                        "name": name,
-                        "confidence": float(confidence)
-                    },
-                    "main": echo_data.get("main", {}),
-                    "substats": echo_data.get("substats", []),
-                    "element": element_data
-                })
+            # Process subs region
+            subs_img = image[ECHO_REGIONS["subs"]["y1"]:ECHO_REGIONS["subs"]["y2"], ECHO_REGIONS["subs"]["x1"]:ECHO_REGIONS["subs"]["x2"]]
+            subs_processed = preprocess_region(subs_img)
+            
+            # Handle line merging for DMG Bonus
+            raw_lines = [l.strip() for l in pytesseract.image_to_string(subs_processed).splitlines() if l.strip()]
+            subs_lines = []
+            prev_line = None
+            
+            for line in raw_lines:
+                if (line.startswith("DMG") or line == "Bonus") and prev_line:
+                    prev_line = f"{prev_line} {line}"
+                else:
+                    if prev_line:
+                        subs_lines.append(prev_line)
+                    prev_line = line
+                    
+            if prev_line:  # Add last line
+                subs_lines.append(prev_line)
+            
+            # Check if lines need merging
+            needs_merging = all(not any(c.isdigit() for c in l) and "%" not in l for l in subs_lines[:len(subs_lines)//2])
+            
+            if needs_merging:
+                # Split and merge if values are separate
+                names = [l for l in subs_lines if not any(c.isdigit() for c in l) and "%" not in l]
+                values = [l for l in subs_lines if any(c.isdigit() for c in l) or "%" in l]
+                subs_text = merge_stat_lines(names, values)
+            else:
+                # Lines are already well-formed
+                subs_text = "\n".join(subs_lines)
+            
+            # Combine for parsing
+            cleaned_text = f"{main_text}\n{subs_text}"
+            
+            icon = image[0:182, 0:188]
+            name, confidence = match_icon(icon)
+            echo_data = parse_region_text(region, cleaned_text)
+            element_region = get_element_region(image)
+            element_data = determine_element(element_region, name)
             
             return {
                 "success": True,
-                "analysis": {"echoes": all_echoes}
+                "analysis": {
+                    "name": {"name": name, "confidence": float(confidence)},
+                    "main": echo_data.get("main", {}),
+                    "substats": echo_data.get("substats", []),
+                    "element": element_data
+                }
             }
         else:
             processed = preprocess_region(image)
