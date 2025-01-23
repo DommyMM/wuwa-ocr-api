@@ -2,8 +2,7 @@ import json
 from pathlib import Path
 import re
 from rapidfuzz import process
-from rapidfuzz.utils import default_process
-from echo import ECHO_NAMES, MAIN_STAT_NAMES, SUB_STATS, SUB_STAT_NAMES
+from echo import MAIN_STAT_NAMES, SUB_STAT_NAMES
 
 IGNORE_TERMS = [
     "WUTHERING",

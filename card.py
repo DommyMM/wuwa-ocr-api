@@ -190,21 +190,37 @@ def determine_element(image, echo_name: str):
 
 def match_icon(icon_img: np.ndarray) -> Tuple[str, float]:
     """SIFT-based icon matching - returns best match"""
-    sift = SIFT_create()
-    kp1, des1 = sift.detectAndCompute(icon_img, None)
-    if des1 is None:
-        return ("No matches", 0.0)
-    
-    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-    matches = []
-    
-    for name, (kp2, des2) in TEMPLATE_FEATURES.items():
-        matches_list = flann.knnMatch(des1, des2, k=2)
-        good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
-        confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
-        matches.append((name, confidence))
-    
-    return max(matches, key=lambda x: x[1])
+    if len(TEMPLATE_FEATURES) == 0:
+        print("Warning: No template features available!")
+        return ("No templates", 0.0)
+        
+    try:
+        sift = SIFT_create()
+        kp1, des1 = sift.detectAndCompute(icon_img, None)
+        if des1 is None:
+            return ("No features", 0.0)
+        
+        matches = []
+        flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+        
+        for name, (kp2, des2) in TEMPLATE_FEATURES.items():
+            try:
+                matches_list = flann.knnMatch(des1, des2, k=2)
+                good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+                confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+                matches.append((name, confidence))
+            except Exception as e:
+                print(f"Error matching template {name}: {str(e)}")
+                continue
+        
+        if not matches:
+            return ("No matches", 0.0)
+            
+        return max(matches, key=lambda x: x[1])
+        
+    except Exception as e:
+        print(f"Error in match_icon: {str(e)}")
+        return ("Error", 0.0)
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""

@@ -52,21 +52,43 @@ try:
         SUB_STAT_NAMES = set(SUB_STATS.keys())
 
     # Initialize SIFT
+    print(f"Loading templates from: {ICONS_DIR}")
+    if not ICONS_DIR.exists():
+        raise FileNotFoundError(f"Icons directory not found: {ICONS_DIR}")
+        
     sift = SIFT_create()
+    template_count = 0
     
     # Load and process templates
     for icon_path in ICONS_DIR.glob('*.png'):
-        img = cv2.imread(str(icon_path))
-        scaled = cv2.resize(img, (188, 188))
-        ICON_TEMPLATES[icon_path.stem] = scaled
-        
-        # Compute SIFT features
-        kp, des = sift.detectAndCompute(scaled, None)
-        if des is not None:
-            TEMPLATE_FEATURES[icon_path.stem] = (kp, des)
-
-except (FileNotFoundError, json.JSONDecodeError) as e:
-    print(f"Warning: Data loading error: {e}")
+        try:
+            img = cv2.imread(str(icon_path))
+            if img is None:
+                print(f"Failed to load template: {icon_path}")
+                continue
+                
+            scaled = cv2.resize(img, (188, 188))
+            ICON_TEMPLATES[icon_path.stem] = scaled
+            
+            # Compute SIFT features
+            kp, des = sift.detectAndCompute(scaled, None)
+            if des is not None:
+                TEMPLATE_FEATURES[icon_path.stem] = (kp, des)
+                template_count += 1
+            else:
+                print(f"No features detected for: {icon_path}")
+                
+        except Exception as e:
+            print(f"Error processing template {icon_path}: {e}")
+            continue
+            
+    print(f"Successfully loaded {template_count}/{len(list(ICONS_DIR.glob('*.png')))} templates")
+    
+except Exception as e:
+    print(f"Critical error during initialization: {e}")
+    print(f"Working directory: {Path.cwd()}")
+    print(f"Data directory exists: {DATA_DIR.exists()}")
+    print(f"Icons directory exists: {ICONS_DIR.exists()}")
 
 ELEMENT_COLORS = {
 'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
@@ -83,4 +105,15 @@ ELEMENT_COLORS = {
 'Midnight': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
 'Radiance': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
 'Tidebreaking': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
+}
+
+ECHO_REGIONS = {
+    "name": {"top": 0.052, "left": 0.055, "width": 0.8, "height": 0.11},
+    "level": {"top": 0.23, "left": 0.08, "width": 0.1, "height": 0.08},
+    "main": {"top": 0.31, "left": 0.145, "width": 0.78, "height": 0.085},
+    "sub1": {"top": 0.53, "left": 0.115, "width": 0.81, "height": 0.08},
+    "sub2": {"top": 0.6, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub3": {"top": 0.685, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub4": {"top": 0.773, "left": 0.115, "width": 0.81, "height": 0.09},
+    "sub5": {"top": 0.86, "left": 0.115, "width": 0.81, "height": 0.09}
 }

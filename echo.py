@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import pytesseract
 from typing import Dict, List, Tuple
-from pathlib import Path
 import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
