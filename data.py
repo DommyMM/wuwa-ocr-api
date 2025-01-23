@@ -20,7 +20,6 @@ TEMPLATE_FEATURES = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
-ICONS_DIR = DATA_DIR / 'Icons'
 
 try:
     # Load characters
@@ -52,15 +51,15 @@ try:
         SUB_STAT_NAMES = set(SUB_STATS.keys())
 
     # Initialize SIFT
-    print(f"Loading templates from: {ICONS_DIR}")
-    if not ICONS_DIR.exists():
-        raise FileNotFoundError(f"Icons directory not found: {ICONS_DIR}")
+    print(f"Loading templates from: {DATA_DIR}")
+    if not DATA_DIR.exists():
+        raise FileNotFoundError(f"Data directory not found: {DATA_DIR}")
         
     sift = SIFT_create()
     template_count = 0
     
     # Load and process templates
-    for icon_path in ICONS_DIR.glob('*.png'):
+    for icon_path in DATA_DIR.glob('*.png'):
         try:
             img = cv2.imread(str(icon_path))
             if img is None:
@@ -82,14 +81,12 @@ try:
             print(f"Error processing template {icon_path}: {e}")
             continue
             
-    print(f"Successfully loaded {template_count}/{len(list(ICONS_DIR.glob('*.png')))} templates")
+    print(f"Successfully loaded {template_count}/{len(list(DATA_DIR.glob('*.png')))} templates")
     
 except Exception as e:
     print(f"Critical error during initialization: {e}")
     print(f"Working directory: {Path.cwd()}")
     print(f"Data directory exists: {DATA_DIR.exists()}")
-    print(f"Icons directory exists: {ICONS_DIR.exists()}")
-
 ELEMENT_COLORS = {
 'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
 'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},

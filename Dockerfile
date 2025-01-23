@@ -1,5 +1,11 @@
 FROM python:3.9-slim
 
+# Setup directories and files
+WORKDIR /app
+COPY requirements.txt .
+COPY Data /app/Data
+COPY *.py /app/
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     autoconf automake build-essential ca-certificates g++ git \
@@ -9,22 +15,10 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Setup application
-WORKDIR /app
-COPY requirements.txt .
+# Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create and verify data directories
-RUN mkdir -p /app/Data/Icons
-
-# Copy data files with explicit paths
-COPY Data/*.json /app/Data/
-COPY Data/Icons/*.png /app/Data/Icons/
-
-# Copy application code
-COPY *.py /app/
-
-# Install Tesseract and verify setup
+# Install Tesseract
 RUN git clone https://github.com/tesseract-ocr/tesseract.git && \
     cd tesseract && \
     git checkout 5.5.0 && \
@@ -38,17 +32,5 @@ RUN git clone https://github.com/tesseract-ocr/tesseract.git && \
     mkdir -p /usr/local/share/tessdata && \
     wget -P /usr/local/share/tessdata https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata
 
-# Verify data files and template loading
-RUN echo "Verifying data structure:" && \
-    ls -la /app/Data/ && \
-    echo "Verifying icons:" && \
-    ls -la /app/Data/Icons/ && \
-    echo "Testing template loading:" && \
-    python -c "from data import TEMPLATE_FEATURES; print(f'Templates loaded: {len(TEMPLATE_FEATURES)}')" && \
-    echo "Verifying Tesseract:" && \
-    tesseract --version && \
-    tesseract --list-langs
-
 ENV TESSDATA_PREFIX=/usr/local/share/tessdata
-
 ENTRYPOINT ["python", "server.py"]
