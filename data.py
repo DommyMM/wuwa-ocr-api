@@ -10,6 +10,8 @@ Rapid = RapidOCR(lang='en')
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
+WEAPON_NAMES: List[str] = []
+WEAPON_DATA: Dict[str, str] = {} 
 MAIN_STAT_NAMES: Set[str] = set()
 SUB_STATS: Dict = {}
 SUB_STAT_NAMES: Set[str] = set()
@@ -26,6 +28,13 @@ try:
     with open(DATA_DIR / 'Characters.json', 'r', encoding='utf-8') as f:
         characters_data = json.load(f)
         CHARACTER_NAMES = [char['name'] for char in characters_data]
+
+    with open(DATA_DIR / 'Weapons.json', 'r', encoding='utf-8') as f:
+        weapons_data = json.load(f)
+        for weapon_type, weapons in weapons_data.items():
+            for weapon in weapons:
+                WEAPON_NAMES.append(weapon['name'])
+                WEAPON_DATA[weapon['name']] = weapon_type
 
     # Load echoes
     with open(DATA_DIR / 'Echoes.json', 'r', encoding='utf-8') as f:
@@ -49,9 +58,7 @@ try:
         sub_data = json.load(f)
         SUB_STATS = sub_data["subStats"]
         SUB_STAT_NAMES = set(SUB_STATS.keys())
-
-    # Initialize SIFT
-    print(f"Loading templates from: {DATA_DIR}")
+    
     if not DATA_DIR.exists():
         raise FileNotFoundError(f"Data directory not found: {DATA_DIR}")
         
@@ -80,13 +87,13 @@ try:
         except Exception as e:
             print(f"Error processing template {icon_path}: {e}")
             continue
-            
-    print(f"Successfully loaded {template_count}/{len(list(DATA_DIR.glob('*.png')))} templates")
+    
     
 except Exception as e:
     print(f"Critical error during initialization: {e}")
     print(f"Working directory: {Path.cwd()}")
     print(f"Data directory exists: {DATA_DIR.exists()}")
+
 ELEMENT_COLORS = {
 'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
 'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},

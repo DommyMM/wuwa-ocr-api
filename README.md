@@ -30,13 +30,13 @@ Server will start on port 5000 by default (configurable via PORT environment var
 ## API Endpoints
 
 ### `POST /api/ocr`
-Process screenshots with type parameter to specify the processing pipeline.
+Process screenshots for Echo analysis or Character import.
 
-Request body:
+Request:
 ```json
 {
     "image": "base64_encoded_image_string",
-    "type": "echo | import"
+    "type": "echo | card"
 }
 ```
 
@@ -84,6 +84,10 @@ Request body:
     ],
     "echoes": [
         {
+            "name": {
+                "name": "Echo Name",
+                "confidence": 0.85
+            },
             "main": {
                 "name": "Main Stat",
                 "value": "Value"
@@ -95,12 +99,7 @@ Request body:
                 }
                 // ... up to 5 substats
             ],
-            "element": {
-                "primary": "Element Type",
-                "secondary": "Element Type",
-                "primary_ratio": 0.85,
-                "secondary_ratio": 0.15
-            }
+            "element": "Element Type"
         }
         // ... 5 echoes total
     ]

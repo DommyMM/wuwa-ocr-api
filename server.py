@@ -7,15 +7,15 @@ import numpy as np
 import base64
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from typing import Optional
-from echo import process_echo
 from card import process_card
+from char import process_char
 import time
 from collections import defaultdict
 import os
 import asyncio
 from contextlib import asynccontextmanager
 
-MAX_WORKERS = 6
+MAX_WORKERS = 20
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
@@ -50,7 +50,7 @@ class APIStatus(BaseModel):
             "method": "POST",
             "request": {
                 "image": "string (base64 encoded image)",
-                "type": "string ('echo' or 'import')"
+                "type": "string ('char-type' or 'import-type')"
             }
         }
     }
@@ -87,7 +87,7 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-async def process_echo_image(image_bytes: bytes):
+async def process_card_image(image_bytes: bytes, type: str):
     try:
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -95,30 +95,7 @@ async def process_echo_image(image_bytes: bytes):
             raise ValueError("Failed to decode image")
         
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_echo, image)
-        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
-        return result
-            
-    except TimeoutError:
-        raise HTTPException(
-            status_code=408,
-            detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Image processing error: {str(e)}"
-        )
-
-async def process_card_image(image_bytes: bytes, region: str):
-    try:
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if image is None:
-            raise ValueError("Failed to decode image")
-        
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_card, image, region)
+        future = loop.run_in_executor(executor, process_card, image, type)
         result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
         return result
             
@@ -127,6 +104,22 @@ async def process_card_image(image_bytes: bytes, region: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
 
+async def process_char_image(image_bytes: bytes, type: str):
+    try:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Failed to decode image")
+        
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(executor, process_char, image, type)
+        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
+        return result
+        
+    except TimeoutError:
+        raise HTTPException(status_code=408, detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
@@ -141,11 +134,12 @@ async def process_image_request(request: Request, image_data: ImageRequest):
             image_str = image_str.split(',')[1]
         image_bytes = base64.b64decode(image_str)
         
-        if image_data.type == "echo":
-            result = await process_echo_image(image_bytes)
+        if image_data.type.startswith("char-"):
+            type_name = image_data.type.replace("char-", "")
+            result = await process_char_image(image_bytes, type_name)
         elif image_data.type.startswith("import-"):
-            region = image_data.type.replace("import-", "")
-            result = await process_card_image(image_bytes, region)
+            type_name = image_data.type.replace("import-", "")
+            result = await process_card_image(image_bytes, type_name)
         else:
             return JSONResponse(
                 status_code=400,
