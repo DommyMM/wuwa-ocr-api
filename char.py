@@ -264,16 +264,15 @@ def extract_level(text: str) -> int:
 
 def process_char(image: np.ndarray, char_type: str) -> Dict[str, Any]:
     """Process character-related screenshots using OCR."""
-    match char_type:
-        case "character":
-            return process_character(image)
-        case "weapon":
-            return process_weapon(image)
-        case "sequences":
-            return process_sequences(image)
-        case "forte":
-            return process_forte(image)
-        case "echo":
-            return process_echo(image)
-        case _:
-            raise ValueError(f"Unsupported character type: {char_type}")
+    if char_type == "character":
+        return process_character(image)
+    elif char_type == "weapon":
+        return process_weapon(image)
+    elif char_type == "sequences":
+        return process_sequences(image)
+    elif char_type == "forte":
+        return process_forte(image)
+    elif char_type == "echo":
+        return process_echo(image)
+    else:
+        raise ValueError(f"Unsupported character type: {char_type}")
