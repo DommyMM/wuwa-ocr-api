@@ -1,11 +1,17 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES, Rapid
+from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
 from cv2 import SIFT_create, FlannBasedMatcher
+
+
+WEAPON_REGIONS = {
+    "name": {"x1": 152, "y1": 25, "x2": 437, "y2": 79},
+    "level": {"x1": 191, "y1": 79, "x2": 269, "y2": 133}
+}
 
 SEQUENCE_REGIONS = {
     "S1": {"center": (55, 58), "width": 30, "height": 26},
@@ -82,85 +88,92 @@ def validate_character_name(raw_name: str) -> str:
     return match[0] if match and match[1] > 70 else raw_name
 
 def parse_region_text(name, text):
-    if name == "character":
-        parts = [p for p in text.split() if p.strip()]
-        level = 1
-        for part in parts:
-            if "LV." in part:
-                match = re.search(r'LV\.(\d+)', part)
-                if match:
-                    level = int(match.group(1))
-                    parts.remove(part)
-                    break
-        raw_name = " ".join(parts)
-        char_name = validate_character_name(raw_name)
-        return {"name": char_name, "level": level}
-    
-    elif name == "watermark":
-        lines = text.split('\n')
-        uid = lines[1].split("UID:")[-1].strip() if len(lines) > 1 else "0"
-        return {
-            "username": lines[0].split("ID:")[-1].strip() if lines else "",
-            "uid": int(uid) if uid.isdigit() else 0
-        }
-    
-    elif name == "forte":
-        levels = []
-        clean_text = text.replace('+', ' ').strip()
-        for line in clean_text.split('\n'):
-            matches = re.finditer(r'LV\.(\d+)(?:/10)?', line)
-            for match in matches:
-                levels.append(int(match.group(1)))
-        while len(levels) < 5:
-            levels.append(0)
-        return {"levels": levels[:5]}
-    
-    elif name == "weapon":
-        lines = text.split('\n')
-        name = lines[0].strip() if lines else "Unknown"
-        level = 1
-        for line in lines[1:]:
-            if "LV." in line:
-                match = re.search(r'LV\.(\d+)', line)
-                if match:
-                    level = int(match.group(1))
-                    break
-        return {
-            "name": name,
-            "level": level
-        }
-    
-    elif name.startswith("echo"):
-        lines = [l.strip() for l in text.split('\n') if l.strip()]
-        if not lines:
-            return []
-        
-        main_parts = lines[0].rsplit(' ', 1)
-        if len(main_parts) != 2:
-            return []
-        main_name, main_value = main_parts
-        main_name = clean_stat_name(main_name, main_value)
-        main_name = validate_stat(main_name, MAIN_STAT_NAMES)
-        main_value = validate_value(main_value, main_name)
-        
-        substats = []
-        for line in lines[1:]:
-            parts = line.rsplit(' ', 1)
-            if len(parts) != 2:
-                continue
-                
-            stat_name, stat_value = parts
-            name = clean_stat_name(stat_name, stat_value)
-            name = validate_stat(name, SUB_STATS.keys())
-            value = validate_value(stat_value, name)
-            substats.append({"name": name.replace("DMG Bonus", ""), "value": value})
-        
-        return {
-            "main": {"name": main_name, "value": main_value},
-            "substats": substats
-        }
-    
-    return text
+    match name:
+        case "character":
+            parts = [p for p in text.split() if p.strip()]
+            level = 1
+            for part in parts:
+                if "LV." in part:
+                    match = re.search(r'LV\.(\d+)', part)
+                    if match:
+                        level = int(match.group(1))
+                        parts.remove(part)
+                        break
+            raw_name = " ".join(parts)
+            char_name = validate_character_name(raw_name)
+            return {"name": char_name, "level": level}
+            
+        case "watermark":
+            lines = text.split('\n')
+            uid = lines[1].split("UID:")[-1].strip() if len(lines) > 1 else "0"
+            return {
+                "username": lines[0].split("ID:")[-1].strip() if lines else "",
+                "uid": int(uid) if uid.isdigit() else 0
+            }
+            
+        case "forte":
+            levels = []
+            clean_text = text.replace('+', ' ').strip()
+            for line in clean_text.split('\n'):
+                matches = re.finditer(r'LV\.(\d+)(?:/10)?', line)
+                for match in matches:
+                    levels.append(int(match.group(1)))
+            while len(levels) < 5:
+                levels.append(0)
+            return {"levels": levels[:5]}
+            
+        case "weapon":
+            def validate_weapon_name(raw_name: str) -> str:
+                if not WEAPON_NAMES:
+                    return raw_name
+                match = process.extractOne(raw_name, WEAPON_NAMES)
+                return match[0] if match and match[1] > 70 else raw_name
+            lines = text.split('\n')
+            raw_name = lines[0].strip() if lines else "Unknown"
+            weapon_name = validate_weapon_name(raw_name)
+            level = 1
+            for line in lines[1:]:
+                if "LV." in line:
+                    match = re.search(r'LV\.(\d+)', line)
+                    if match:
+                        level = int(match.group(1))
+                        break
+            return {
+                "name": weapon_name,
+                "level": level
+            }
+        case _ if name.startswith("echo"):
+            lines = [l.strip() for l in text.split('\n') if l.strip()]
+            if not lines:
+                return []
+            
+            main_parts = lines[0].rsplit(' ', 1)
+            if len(main_parts) != 2:
+                return []
+            main_name, main_value = main_parts
+            main_name = clean_stat_name(main_name, main_value)
+            main_name = validate_stat(main_name, MAIN_STAT_NAMES)
+            main_value = validate_value(main_value, main_name)
+            
+            substats = []
+            for line in lines[1:]:
+                parts = line.rsplit(' ', 1)
+                if len(parts) != 2:
+                    continue
+                    
+                stat_name, stat_value = parts
+                name = clean_stat_name(stat_name, stat_value)
+                name = validate_stat(name, SUB_STATS.keys())
+                value = validate_value(stat_value, name)
+                substats.append({"name": name.replace("DMG Bonus", ""), "value": value})
+            
+            return {
+                "main": {"name": main_name, "value": main_value},
+                "substats": substats
+            }
+            
+        case _:
+            return text
 
 def get_element_region(image):
     """Extract element region from individual echo image"""
@@ -258,7 +271,7 @@ def merge_stat_lines(names: list, values: list) -> str:
 
 def process_card(image, region: str):
     if image is None:
-        return {"success": False, "error": "Failed to process image"}
+        return {"success": False, "error": "No image data provided"}
     
     try:
         if region == "sequences":
@@ -324,9 +337,19 @@ def process_card(image, region: str):
                     "element": element_data
                 }
             }
+        elif region == "weapon":
+            name_region = image[WEAPON_REGIONS["name"]["y1"]:WEAPON_REGIONS["name"]["y2"], WEAPON_REGIONS["name"]["x1"]:WEAPON_REGIONS["name"]["x2"]]
+            level_region = image[WEAPON_REGIONS["level"]["y1"]:WEAPON_REGIONS["level"]["y2"], WEAPON_REGIONS["level"]["x1"]:WEAPON_REGIONS["level"]["x2"]]
+            name_text = pytesseract.image_to_string(name_region).strip()
+            level_text = pytesseract.image_to_string(level_region).strip()
+            cleaned_text = f"{name_text}\n{level_text}"
+            result = parse_region_text(region, cleaned_text)
+            return {
+                "success": True,
+                "analysis": result
+            }
         else:
-            processed = preprocess_region(image)
-            text = process_ocr(region, processed)
+            text = process_ocr(region, image)
             cleaned_text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
             result = parse_region_text(region, cleaned_text)
             
