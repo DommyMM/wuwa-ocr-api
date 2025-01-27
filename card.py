@@ -29,11 +29,12 @@ ECHO_REGIONS = {
 
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
-    if name == "character" and Rapid:
+    if name in ["character", "weapon"]:
         result, _ = Rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
         return ""
+    image = preprocess_region(image)
     return pytesseract.image_to_string(image)
 
 def preprocess_region(image):
@@ -129,6 +130,7 @@ def parse_region_text(name, text):
                 match = process.extractOne(raw_name, WEAPON_NAMES)
                 return match[0] if match and match[1] > 70 else raw_name
             lines = text.split('\n')
+            print(lines)
             raw_name = lines[0].strip() if lines else "Unknown"
             weapon_name = validate_weapon_name(raw_name)
             level = 1
@@ -336,17 +338,6 @@ def process_card(image, region: str):
                     "substats": echo_data.get("substats", []),
                     "element": element_data
                 }
-            }
-        elif region == "weapon":
-            name_region = image[WEAPON_REGIONS["name"]["y1"]:WEAPON_REGIONS["name"]["y2"], WEAPON_REGIONS["name"]["x1"]:WEAPON_REGIONS["name"]["x2"]]
-            level_region = image[WEAPON_REGIONS["level"]["y1"]:WEAPON_REGIONS["level"]["y2"], WEAPON_REGIONS["level"]["x1"]:WEAPON_REGIONS["level"]["x2"]]
-            name_text = pytesseract.image_to_string(name_region).strip()
-            level_text = pytesseract.image_to_string(level_region).strip()
-            cleaned_text = f"{name_text}\n{level_text}"
-            result = parse_region_text(region, cleaned_text)
-            return {
-                "success": True,
-                "analysis": result
             }
         else:
             text = process_ocr(region, image)
