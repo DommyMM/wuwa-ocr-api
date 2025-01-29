@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, TEMPLATE_FEATURES, Rapid
+from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, ECHO_COSTS, TEMPLATE_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -24,7 +24,8 @@ SEQUENCE_REGIONS = {
 
 ECHO_REGIONS = {
     "main": {"x1": 195, "y1": 66, "x2": 366, "y2": 148},
-    "subs": {"x1": 36, "y1": 225, "x2": 362, "y2": 409}
+    "subs_names": {"x1": 40, "y1": 228, "x2": 290, "y2": 395},
+    "subs_values": {"x1": 292, "y1": 228, "x2": 359, "y2": 395}
 }
 
 def process_ocr(name: str, image: np.ndarray) -> str:
@@ -130,7 +131,6 @@ def parse_region_text(name, text):
                 match = process.extractOne(raw_name, WEAPON_NAMES)
                 return match[0] if match and match[1] > 70 else raw_name
             lines = text.split('\n')
-            print(lines)
             raw_name = lines[0].strip() if lines else "Unknown"
             weapon_name = validate_weapon_name(raw_name)
             level = 1
@@ -203,39 +203,44 @@ def determine_element(image, echo_name: str):
     matches.sort(key=lambda x: x[1], reverse=True)
     return matches[0][0] if matches else "Unknown"
 
-def match_icon(icon_img: np.ndarray) -> Tuple[str, float]:
-    """SIFT-based icon matching - returns best match"""
-    if len(TEMPLATE_FEATURES) == 0:
-        print("Warning: No template features available!")
-        return ("No templates", 0.0)
-        
-    try:
-        sift = SIFT_create()
-        kp1, des1 = sift.detectAndCompute(icon_img, None)
-        if des1 is None:
-            return ("No features", 0.0)
-        
-        matches = []
-        flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-        
-        for name, (kp2, des2) in TEMPLATE_FEATURES.items():
-            try:
-                matches_list = flann.knnMatch(des1, des2, k=2)
-                good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
-                confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
-                matches.append((name, confidence))
-            except Exception as e:
-                print(f"Error matching template {name}: {str(e)}")
-                continue
-        
-        if not matches:
-            return ("No matches", 0.0)
-            
-        return max(matches, key=lambda x: x[1])
-        
-    except Exception as e:
-        print(f"Error in match_icon: {str(e)}")
-        return ("Error", 0.0)
+def get_echo_cost(image: np.ndarray) -> int:
+    """Get echo cost from image region"""
+    cost_img = image[9:61, 302:345]
+    
+    result, _ = Rapid(cost_img)
+    if result:
+        cost = int(result[0][1])
+        if cost in [1, 3, 4]:
+            return cost
+    return 0
+
+def match_icon(image: np.ndarray) -> Tuple[str, float]:
+    """SIFT-based icon matching - returns best match with confidence check"""
+    icon_img = image[0:182, 0:188]
+    sift = SIFT_create()
+    kp1, des1 = sift.detectAndCompute(icon_img, None)
+    matches = []
+    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+    
+    for name, (kp2, des2) in TEMPLATE_FEATURES.items():
+        matches_list = flann.knnMatch(des1, des2, k=2)
+        good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+        confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+        matches.append((name, confidence))
+    
+    sorted_matches = sorted(matches, key=lambda x: x[1], reverse=True)
+    best_match, best_conf = sorted_matches[0]
+    secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
+    
+    if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
+        actual_cost = get_echo_cost(image)
+        if actual_cost in [1, 3, 4]:
+            best_cost = ECHO_COSTS.get(best_match, 0)
+            if best_cost != actual_cost:
+                for name, conf in secondary_matches:
+                    if ECHO_COSTS.get(name, 0) == actual_cost:
+                        return (name, conf)
+    return sorted_matches[0]
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
@@ -289,43 +294,29 @@ def process_card(image, region: str):
             main_lines = [l.strip() for l in pytesseract.image_to_string(main_processed).splitlines() if l.strip()]
             main_text = f"{main_lines[0]} {main_lines[1]}" if len(main_lines) >= 2 else ""
             
-            # Process subs region
-            subs_img = image[ECHO_REGIONS["subs"]["y1"]:ECHO_REGIONS["subs"]["y2"], ECHO_REGIONS["subs"]["x1"]:ECHO_REGIONS["subs"]["x2"]]
-            subs_processed = preprocess_region(subs_img)
+            # Process subs regions separately
+            names_img = image[ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_names"]["y2"], ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_names"]["x2"]]
+            values_img = image[ECHO_REGIONS["subs_values"]["y1"]:ECHO_REGIONS["subs_values"]["y2"], ECHO_REGIONS["subs_values"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]]
             
-            # Handle line merging for DMG Bonus
-            raw_lines = [l.strip() for l in pytesseract.image_to_string(subs_processed).splitlines() if l.strip()]
-            subs_lines = []
-            prev_line = None
+            names_processed = preprocess_region(names_img)
+            values_processed = preprocess_region(values_img)
             
-            for line in raw_lines:
-                if (line.startswith("DMG") or line == "Bonus") and prev_line:
-                    prev_line = f"{prev_line} {line}"
+            # Get raw lines
+            names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
+            values_lines = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
+            
+            # Process names - combine DMG lines
+            cleaned_names = []
+            for line in names_lines:
+                if line.startswith(("DMG", "DMG Bonus")) and cleaned_names:
+                    cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
                 else:
-                    if prev_line:
-                        subs_lines.append(prev_line)
-                    prev_line = line
-                    
-            if prev_line:  # Add last line
-                subs_lines.append(prev_line)
-            
-            # Check if lines need merging
-            needs_merging = all(not any(c.isdigit() for c in l) and "%" not in l for l in subs_lines[:len(subs_lines)//2])
-            
-            if needs_merging:
-                # Split and merge if values are separate
-                names = [l for l in subs_lines if not any(c.isdigit() for c in l) and "%" not in l]
-                values = [l for l in subs_lines if any(c.isdigit() for c in l) or "%" in l]
-                subs_text = merge_stat_lines(names, values)
-            else:
-                # Lines are already well-formed
-                subs_text = "\n".join(subs_lines)
-            
-            # Combine for parsing
+                    cleaned_names.append(line)
+            values = values_lines[:5]
+            subs_text = "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
             cleaned_text = f"{main_text}\n{subs_text}"
             
-            icon = image[0:182, 0:188]
-            name, confidence = match_icon(icon)
+            name, confidence = match_icon(image)
             echo_data = parse_region_text(region, cleaned_text)
             element_region = get_element_region(image)
             element_data = determine_element(element_region, name)

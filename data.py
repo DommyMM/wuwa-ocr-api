@@ -19,6 +19,7 @@ ECHO_NAMES: List[str] = []
 ECHO_ELEMENTS: Dict = {}
 ICON_TEMPLATES: Dict[str, np.ndarray] = {}
 TEMPLATE_FEATURES = {}
+ECHO_COSTS: Dict[str, int] = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
@@ -41,6 +42,7 @@ try:
         echoes_data = json.load(f)
         ECHO_NAMES = [echo['name'] for echo in echoes_data]
         ECHO_ELEMENTS = {echo['name']: echo['elements'] for echo in echoes_data}
+        ECHO_COSTS = {echo['name']: echo['cost'] for echo in echoes_data}
 
     # Load main stats
     with open(DATA_DIR / 'Mainstat.json', 'r', encoding='utf-8') as f:
