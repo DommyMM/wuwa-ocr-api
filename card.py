@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ELEMENT_COLORS, ECHO_ELEMENTS, ECHO_COSTS, TEMPLATE_FEATURES, Rapid
+from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -11,6 +11,14 @@ from cv2 import SIFT_create, FlannBasedMatcher
 WEAPON_REGIONS = {
     "name": {"x1": 152, "y1": 25, "x2": 437, "y2": 79},
     "level": {"x1": 191, "y1": 79, "x2": 269, "y2": 133}
+}
+
+FORTE_REGIONS = {
+    "normal": {"x1": 270, "y1": 144, "x2": 389, "y2": 204},
+    "skill": {"x1": 48, "y1": 302, "x2": 158, "y2": 356},
+    "circuit": {"x1": 467, "y1": 296, "x2": 596, "y2": 357},
+    "intro": {"x1": 122, "y1": 545, "x2": 247, "y2": 602},
+    "lib": {"x1": 386, "y1": 544, "x2": 518, "y2": 601}
 }
 
 SEQUENCE_REGIONS = {
@@ -24,8 +32,8 @@ SEQUENCE_REGIONS = {
 
 ECHO_REGIONS = {
     "main": {"x1": 195, "y1": 66, "x2": 366, "y2": 148},
-    "subs_names": {"x1": 40, "y1": 228, "x2": 290, "y2": 395},
-    "subs_values": {"x1": 292, "y1": 228, "x2": 359, "y2": 395}
+    "subs_names": {"x1": 36, "y1": 228, "x2": 290, "y2": 395},
+    "subs_values": {"x1": 290, "y1": 228, "x2": 359, "y2": 395}
 }
 
 def process_ocr(name: str, image: np.ndarray) -> str:
@@ -107,23 +115,13 @@ def parse_region_text(name, text):
             
         case "watermark":
             lines = text.split('\n')
-            uid = lines[1].split("UID:")[-1].strip() if len(lines) > 1 else "0"
+            username = lines[0].split(':', 1)[-1].strip() if lines and ':' in lines[0] else ""
+            uid = lines[1].split(':', 1)[-1].strip() if len(lines) > 1 and ':' in lines[1] else "0"
             return {
-                "username": lines[0].split("ID:")[-1].strip() if lines else "",
+                "username": username,
                 "uid": int(uid) if uid.isdigit() else 0
             }
-            
-        case "forte":
-            levels = []
-            clean_text = text.replace('+', ' ').strip()
-            for line in clean_text.split('\n'):
-                matches = re.finditer(r'LV\.(\d+)(?:/10)?', line)
-                for match in matches:
-                    levels.append(int(match.group(1)))
-            while len(levels) < 5:
-                levels.append(0)
-            return {"levels": levels[:5]}
-            
+
         case "weapon":
             def validate_weapon_name(raw_name: str) -> str:
                 if not WEAPON_NAMES:
@@ -188,20 +186,24 @@ def get_element_region(image):
     return image[y1:y2, x1:x2]
 
 def determine_element(image, echo_name: str):
-    """Match element colors only against possible elements for echo"""
+    """Match element using SIFT features, filtered by possible elements"""
     possible_elements = ECHO_ELEMENTS.get(echo_name, ["Unknown"])
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    sift = SIFT_create()
+    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+    
+    kp1, des1 = sift.detectAndCompute(image, None)
+    if des1 is None:
+        return "Unknown"
     
     matches = []
-    for element in possible_elements:
-        if element in ELEMENT_COLORS:
-            ranges = ELEMENT_COLORS[element]
-            mask = cv2.inRange(hsv, ranges['lower'], ranges['upper'])
-            ratio = np.count_nonzero(mask) / mask.size
-            matches.append((element, ratio))
-    
-    matches.sort(key=lambda x: x[1], reverse=True)
-    return matches[0][0] if matches else "Unknown"
+    for name, (kp2, des2) in ELEMENT_FEATURES.items():
+        if name in possible_elements:
+            matches_list = flann.knnMatch(des1, des2, k=2)
+            good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+            confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+            matches.append((name, confidence))
+    return max(matches, key=lambda x: x[1])[0] if matches else "Unknown"
 
 def get_echo_cost(image: np.ndarray) -> int:
     """Get echo cost from image region"""
@@ -286,6 +288,21 @@ def process_card(image, region: str):
             return {
                 "success": True,
                 "analysis": {"sequence": sequence}
+            }
+        elif region == "forte":
+            forte_data = {"levels": [0] * 5}
+            processed = preprocess_region(image)
+            
+            for i, (name, coords) in enumerate(FORTE_REGIONS.items()):
+                region_img = processed[coords["y1"]:coords["y2"], coords["x1"]:coords["x2"]]
+                text = pytesseract.image_to_string(region_img).strip()
+                match = re.search(r'(?i)lv\.(\d+)(?:/10)?', text)
+                if match:
+                    forte_data["levels"][i] = int(match.group(1))
+                    
+            return {
+                "success": True,
+                "analysis": forte_data
             }
         elif region.startswith("echo"):
             # Process main region

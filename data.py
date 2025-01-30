@@ -20,9 +20,37 @@ ECHO_ELEMENTS: Dict = {}
 ICON_TEMPLATES: Dict[str, np.ndarray] = {}
 TEMPLATE_FEATURES = {}
 ECHO_COSTS: Dict[str, int] = {}
+ELEMENT_TEMPLATES: Dict[str, np.ndarray] = {}
+ELEMENT_FEATURES = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
+
+def load_templates(folder: str, templates: dict, features: dict, target_size: tuple = None) -> int:
+    count = 0
+    sift = SIFT_create()
+    
+    for icon_path in (DATA_DIR / folder).glob('*.png'):
+        try:
+            img = cv2.imread(str(icon_path))
+            if img is None:
+                print(f"Failed to load template: {icon_path}")
+                continue
+            
+            if target_size:
+                img = cv2.resize(img, target_size)
+            templates[icon_path.stem] = img
+            
+            kp, des = sift.detectAndCompute(img, None)
+            if des is not None:
+                features[icon_path.stem] = (kp, des)
+                count += 1
+            else:
+                print(f"No features detected for: {icon_path}")
+                
+        except Exception as e:
+            print(f"Error processing template {icon_path}: {e}")
+    return count
 
 try:
     # Load characters
@@ -64,54 +92,14 @@ try:
     if not DATA_DIR.exists():
         raise FileNotFoundError(f"Data directory not found: {DATA_DIR}")
         
-    sift = SIFT_create()
-    template_count = 0
-    
-    # Load and process templates
-    for icon_path in DATA_DIR.glob('*.png'):
-        try:
-            img = cv2.imread(str(icon_path))
-            if img is None:
-                print(f"Failed to load template: {icon_path}")
-                continue
-                
-            scaled = cv2.resize(img, (188, 188))
-            ICON_TEMPLATES[icon_path.stem] = scaled
-            
-            # Compute SIFT features
-            kp, des = sift.detectAndCompute(scaled, None)
-            if des is not None:
-                TEMPLATE_FEATURES[icon_path.stem] = (kp, des)
-                template_count += 1
-            else:
-                print(f"No features detected for: {icon_path}")
-                
-        except Exception as e:
-            print(f"Error processing template {icon_path}: {e}")
-            continue
-    
-    
+    echo_count = load_templates('Echoes', ICON_TEMPLATES, TEMPLATE_FEATURES, (188, 188))
+    element_count = load_templates('Elements', ELEMENT_TEMPLATES, ELEMENT_FEATURES)
+    print(f"Loaded {echo_count} echo templates and {element_count} element templates")
+
 except Exception as e:
     print(f"Critical error during initialization: {e}")
     print(f"Working directory: {Path.cwd()}")
     print(f"Data directory exists: {DATA_DIR.exists()}")
-
-ELEMENT_COLORS = {
-'Healing': {'lower': np.array([30, 60, 120]), 'upper': np.array([50, 210, 240])},
-'Electro': {'lower': np.array([100, 70, 140]), 'upper': np.array([179, 170, 255])},
-'Fusion': {'lower': np.array([0, 150, 150]), 'upper': np.array([20, 180, 255])},
-'Havoc': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
-'Spectro': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
-'Glacio': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
-'Aero': {'lower': np.array([60, 150, 210]), 'upper': np.array([80, 180, 255])},
-'Attack': {'lower': np.array([0, 190, 120]), 'upper': np.array([5, 220, 220])},
-'ER': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])},
-'Empyrean': {'lower': np.array([90, 90, 210]), 'upper': np.array([110, 130, 255])},
-'Frosty': {'lower': np.array([90, 150, 210]), 'upper': np.array([110, 210, 255])},
-'Midnight': {'lower': np.array([140, 50, 70]), 'upper': np.array([179, 90, 255])},
-'Radiance': {'lower': np.array([20, 100, 200]), 'upper': np.array([40, 160, 255])},
-'Tidebreaking': {'lower': np.array([0, 0, 190]), 'upper': np.array([140, 30, 255])}
-}
 
 ECHO_REGIONS = {
     "name": {"top": 0.052, "left": 0.055, "width": 0.8, "height": 0.11},
