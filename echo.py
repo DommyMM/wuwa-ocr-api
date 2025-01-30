@@ -5,7 +5,8 @@ from typing import Dict, List, Tuple
 import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
-from data import ECHO_NAMES, MAIN_STAT_NAMES, SUB_STATS, SUB_STAT_NAMES, ECHO_ELEMENTS, ELEMENT_COLORS, ECHO_REGIONS
+from data import ECHO_NAMES, MAIN_STAT_NAMES, SUB_STATS, SUB_STAT_NAMES, ECHO_ELEMENTS, ECHO_REGIONS, ELEMENT_FEATURES
+from cv2 import SIFT_create, FlannBasedMatcher
 
 def preprocess_echo_image(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -90,20 +91,25 @@ def get_element(name: str, image: np.ndarray) -> str:
     
     element_region = get_element_circle(image)
     
-    hsv = cv2.cvtColor(element_region, cv2.COLOR_BGR2HSV)
+    sift = SIFT_create()
+    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+    
+    kp1, des1 = sift.detectAndCompute(element_region, None)
+    if des1 is None:
+        return "Unknown"
     
     matches = []
     for element in possible_elements:
-        if element in ELEMENT_COLORS:
-            color_range = ELEMENT_COLORS[element]
-            mask = cv2.inRange(hsv, color_range['lower'], color_range['upper'])
-            match_ratio = np.count_nonzero(mask) / mask.size
-            matches.append((element, match_ratio))
-            print(f"Match ratio for {element}: {match_ratio:.3f}")
+        if element in ELEMENT_FEATURES:
+            kp2, des2 = ELEMENT_FEATURES[element]
+            matches_list = flann.knnMatch(des1, des2, k=2)
+            good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+            confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+            matches.append((element, confidence))
+            print(f"SIFT match for {element}: {confidence:.3f}")
     
     best_match = max(matches, key=lambda x: x[1]) if matches else (possible_elements[0], 0)
-    print(f"Selected element: {best_match[0]} with ratio {best_match[1]:.3f}")
-    print()
+    print(f"Selected element: {best_match[0]} with confidence {best_match[1]:.3f}\n")
     
     return best_match[0]
 
