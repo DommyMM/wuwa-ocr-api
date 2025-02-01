@@ -32,8 +32,8 @@ SEQUENCE_REGIONS = {
 
 ECHO_REGIONS = {
     "main": {"x1": 195, "y1": 66, "x2": 366, "y2": 148},
-    "subs_names": {"x1": 36, "y1": 228, "x2": 290, "y2": 395},
-    "subs_values": {"x1": 290, "y1": 228, "x2": 359, "y2": 395}
+    "subs_names": {"x1": 36, "y1": 228, "x2": 290, "y2": 400},
+    "subs_values": {"x1": 290, "y1": 228, "x2": 359, "y2": 400}
 }
 
 def process_ocr(name: str, image: np.ndarray) -> str:
@@ -325,7 +325,7 @@ def process_card(image, region: str):
             # Process names - combine DMG lines
             cleaned_names = []
             for line in names_lines:
-                if line.startswith(("DMG", "DMG Bonus")) and cleaned_names:
+                if line.startswith(("Bonus", "DMG Bonus")) and cleaned_names:
                     cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
                 else:
                     cleaned_names.append(line)
