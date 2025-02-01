@@ -153,7 +153,7 @@ def parse_region_text(name, text):
             main_name, main_value = main_parts
             main_name = clean_stat_name(main_name, main_value)
             main_name = validate_stat(main_name, MAIN_STAT_NAMES)
-            main_value = validate_value(main_value, main_name)
+            main_value = main_value.replace('422', '22')
             
             substats = []
             for line in lines[1:]:
@@ -320,7 +320,14 @@ def process_card(image, region: str):
             
             # Get raw lines
             names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
-            values_lines = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
+            tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
+            
+            # Use Rapid if not exactly 5 values
+            if len(tess_values) != 5:
+                rapid_result, _ = Rapid(values_img)
+                values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
+            else:
+                values_lines = tess_values
             
             # Process names - combine DMG lines
             cleaned_names = []
