@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pytesseract
-from typing import Dict, List, Tuple
+from typing import Dict, List
 import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
@@ -31,26 +31,6 @@ def read_region(image: np.ndarray, region_key: str) -> str:
     
     text = pytesseract.image_to_string(processed, lang='eng', config='--psm 7').strip()
     return text
-
-def merge_nearby_text(entries: List[Tuple[int, int, str, int, int]]) -> List[str]:
-    entries.sort()
-    merged_lines = []
-    current_line = []
-    last_y = None
-    
-    for y, x, text, w, h in entries:
-        if last_y is None or abs(y - last_y) > 10:
-            if current_line:
-                merged_lines.append(sorted(current_line, key=lambda x: x[1]))
-            current_line = [(y, x, text, w, h)]
-            last_y = y
-        else:
-            current_line.append((y, x, text, w, h))
-    
-    if current_line:
-        merged_lines.append(sorted(current_line, key=lambda x: x[1]))
-        
-    return [" ".join(item[2] for item in line) for line in merged_lines]
 
 def get_name(text_lines: List[str]) -> str:
     raw_name = text_lines[0] if text_lines else "Unknown"
