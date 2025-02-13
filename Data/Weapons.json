@@ -12,7 +12,7 @@
         },
         {
             "name": "Luminous Hymn",
-            "id": "21050046",
+            "id": "21050029",
             "rarity": "5-star",
             "ATK": "40",
             "main_stat": "Crit Rate",
@@ -92,7 +92,7 @@
         },
         {
             "name": "Ocean's Gift",
-            "id": "21050027",
+            "id": "21050036",
             "rarity": "4-star",
             "ATK": "37",
             "main_stat": "ATK",
@@ -640,7 +640,7 @@
         },
         {
             "name": "Unflickering Valor",
-            "id": "21020036",
+            "id": "21020025",
             "rarity": "5-star",
             "ATK": "33",
             "main_stat": "ER",
