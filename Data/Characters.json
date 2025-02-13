@@ -28,6 +28,20 @@
         "ER": 100
     },
     {
+        "name": "Brant",
+        "id": "44",
+        "title": "Bulante",
+        "weaponType": "Sword",
+        "element": "Fusion",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Support",
+        "HP": 934,
+        "ATK": 30,
+        "DEF": 107,
+        "ER": 100
+    },
+    {
         "name": "Calcharo",
         "id": "18",
         "title": "kakaluo",
@@ -207,6 +221,20 @@
         "HP": 802,
         "ATK": 20,
         "DEF": 93,
+        "ER": 100
+    },
+    {
+        "name": "Phoebe",
+        "id": "45",
+        "title": "Feibi",
+        "weaponType": "Rectifier",
+        "element": "Spectro",
+        "Bonus1": "Crit DMG",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 866,
+        "ATK": 33,
+        "DEF": 103,
         "ER": 100
     },
     {

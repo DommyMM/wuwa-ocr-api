@@ -11,6 +11,16 @@
             "passive_stat": "12.8"
         },
         {
+            "name": "Luminous Hymn",
+            "id": "21050046",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit Rate",
+            "base_main": "8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Rime-Draped Sprouts",
             "id": "21050026",
             "rarity": "5-star",
@@ -79,6 +89,14 @@
             "ATK": "31",
             "main_stat": "ATK",
             "base_main": "8.1"
+        },
+        {
+            "name": "Ocean's Gift",
+            "id": "21050027",
+            "rarity": "4-star",
+            "ATK": "37",
+            "main_stat": "ATK",
+            "base_main": "4.1"
         },
         {
             "name": "Rectifier#25",
@@ -619,6 +637,16 @@
             "base_main": "5.4",
             "passive": "ATK%",
             "passive_stat": "12"
+        },
+        {
+            "name": "Unflickering Valor",
+            "id": "21020036",
+            "rarity": "5-star",
+            "ATK": "33",
+            "main_stat": "ER",
+            "base_main": "17.1",
+            "passive": "Crit Rate",
+            "passive_stat": "8"
         },
         {
             "name": "Commando of Conviction",
