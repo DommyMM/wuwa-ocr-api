@@ -322,7 +322,14 @@ def process_card(image, region: str):
             names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
             tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
             
-            # Use Rapid if not exactly 5 values
+            # First clean out invalid bonus lines
+            names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
+            
+            # Use Rapid if not exactly 5 entries
+            if len(names_lines) != 5:
+                rapid_result, _ = Rapid(names_img)
+                names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
+                
             if len(tess_values) != 5:
                 rapid_result, _ = Rapid(values_img)
                 values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
@@ -332,12 +339,13 @@ def process_card(image, region: str):
             # Process names - combine DMG lines
             cleaned_names = []
             for line in names_lines:
-                if "Bonus" in line and len(line.split()) < 3:       # Misread of DMG Bonus, valid BA or HA are 4 words
-                    continue
-                elif line.startswith("DMG") and cleaned_names:
+                if line.startswith("DMG") and cleaned_names:
                     cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
                 else:
-                    cleaned_names.append(line)
+                    cleaned_line = line.strip()
+                    if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit"):    # Add Bonus to lines ending with DMG (except Crit DMG)
+                        cleaned_line = f"{cleaned_line} Bonus"
+                    cleaned_names.append(cleaned_line)
             values = values_lines[:5]
             subs_text = "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
             cleaned_text = f"{main_text}\n{subs_text}"
@@ -370,3 +378,40 @@ def process_card(image, region: str):
             "success": False,
             "error": str(e)
         }
+
+if __name__ == "__main__":
+    import cv2
+    import os
+    
+    def test_echo():
+        # Load test image
+        image_path = "echo5.png"
+        if not os.path.exists(image_path):
+            print(f"Error: Test image {image_path} not found")
+            return
+            
+        # Read and process
+        try:
+            image = cv2.imread(image_path)
+            if image is None:
+                print("Error: Failed to load image")
+                return
+                
+            print(f"Processing image: {image_path}")
+            
+            result = process_card(image, "echo1")
+            print("\nResults:")
+            print(f"Success: {result['success']}")
+            if result['success']:
+                analysis = result['analysis']
+                print(f"\nName: {analysis['name']['name']} ({analysis['name']['confidence']:.3f})")
+                print(f"Element: {analysis['element']}")
+                print(f"\nMain Stat: {analysis['main']['name']} {analysis['main']['value']}")
+                print("\nSubstats:")
+                for stat in analysis['substats']:
+                    print(f"- {stat['name']}: {stat['value']}")
+                
+        except Exception as e:
+            print(f"Error processing image: {str(e)}")
+            
+    test_echo()
