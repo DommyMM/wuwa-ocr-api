@@ -326,7 +326,7 @@ def process_card(image, region: str):
             names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
             
             # Use Rapid if not exactly 5 entries
-            if len(names_lines) != 5:
+            if len(names_lines) < 5:
                 rapid_result, _ = Rapid(names_img)
                 names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
                 
@@ -378,40 +378,3 @@ def process_card(image, region: str):
             "success": False,
             "error": str(e)
         }
-
-if __name__ == "__main__":
-    import cv2
-    import os
-    
-    def test_echo():
-        # Load test image
-        image_path = "echo5.png"
-        if not os.path.exists(image_path):
-            print(f"Error: Test image {image_path} not found")
-            return
-            
-        # Read and process
-        try:
-            image = cv2.imread(image_path)
-            if image is None:
-                print("Error: Failed to load image")
-                return
-                
-            print(f"Processing image: {image_path}")
-            
-            result = process_card(image, "echo1")
-            print("\nResults:")
-            print(f"Success: {result['success']}")
-            if result['success']:
-                analysis = result['analysis']
-                print(f"\nName: {analysis['name']['name']} ({analysis['name']['confidence']:.3f})")
-                print(f"Element: {analysis['element']}")
-                print(f"\nMain Stat: {analysis['main']['name']} {analysis['main']['value']}")
-                print("\nSubstats:")
-                for stat in analysis['substats']:
-                    print(f"- {stat['name']}: {stat['value']}")
-                
-        except Exception as e:
-            print(f"Error processing image: {str(e)}")
-            
-    test_echo()
