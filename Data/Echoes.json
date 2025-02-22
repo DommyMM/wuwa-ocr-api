@@ -273,7 +273,7 @@
         "name": "Hecate",
         "id": "34010_1",
         "cost": 4,
-        "elements": ["Empyrean"]
+        "elements": ["Empyrean", "Aero", "Electro", "Fusion", "Glacio", "Spectro", "Havoc"]
     },
     {
         "name": "Hocus Pocus",
