@@ -122,7 +122,7 @@ def process_character(image: np.ndarray) -> Dict[str, Any]:
         if element_match and element_match[1] > 70:
             element = element_match[0]
     
-    if matched_name == raw_name and element in ["Havoc", "Spectro"]:
+    if name_match[1] <= 70 and element in ["Havoc", "Spectro"]:
         gender = detect_gender(image)
         matched_name = f"Rover{gender}"
     
