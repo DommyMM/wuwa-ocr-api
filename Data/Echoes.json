@@ -24,6 +24,12 @@
         "elements": ["Aero", "Electro"]
     },
     {
+        "name": "Aero Prism",
+        "id": "31051",
+        "cost": 1,
+        "elements": ["Radiance", "Tidebreaking"]
+    },
+    {
         "name": "Autopuppet Scout",
         "id": "1003",
         "cost": 3,
@@ -40,6 +46,12 @@
         "id": "992",
         "cost": 4,
         "elements": ["ER", "Healing"]
+    },
+    {
+        "name": "Calcified Junrock",
+        "id": "31050",
+        "cost": 1,
+        "elements": ["Empyrean", "Tidebreaking"]
     },
     {
         "name": "Carapace",
@@ -246,6 +258,12 @@
         "elements": ["Glacio", "ER", "Havoc"]
     },
     {
+        "name": "Golden Junrock",
+        "id": "31049",
+        "cost": 1,
+        "elements": ["Frosty", "Radiance"]
+    },
+    {
         "name": "Gulpuff",
         "id": "115",
         "cost": 1,
@@ -298,6 +316,12 @@
         "id": "988",
         "cost": 1,
         "elements": ["Aero", "Attack"]
+    },
+    {
+        "name": "Hurriclaw",
+        "id": "32032",
+        "cost": 3,
+        "elements": ["Tidebreaking"]
     },
     {
         "name": "Impermanence Heron",
@@ -382,6 +406,12 @@
         "id": "32022",
         "cost": 3,
         "elements": ["Frosty", "Midnight"]
+    },
+    {
+        "name": "Rage Against the Statue",
+        "id": "32031",
+        "cost": 3,
+        "elements": ["Radiance"]
     },
     {
         "name": "Rocksteady Guardian",
