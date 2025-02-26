@@ -211,9 +211,21 @@ def get_echo_cost(image: np.ndarray) -> int:
     
     result, _ = Rapid(cost_img)
     if result:
-        cost = int(result[0][1])
-        if cost in [1, 3, 4]:
-            return cost
+        raw_cost = result[0][1]
+        cost_mapping = {
+            '1': 1, 'T': 1, 'l': 1, 'I': 1,  # Common misreads for 1
+            '3': 3, '4': 4, 'A': 4
+        }
+        # Try direct mapping first
+        if raw_cost in cost_mapping:
+            return cost_mapping[raw_cost]
+        
+        # If not found, try fuzzy matching with valid costs
+        valid_costs = ['1', '3', '4']
+        match = process.extractOne(raw_cost, valid_costs)
+        if match and match[1] > 70: 
+            return int(match[0])
+    
     return 0
 
 def match_icon(image: np.ndarray) -> Tuple[str, float]:
