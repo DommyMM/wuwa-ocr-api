@@ -51,6 +51,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Whispers of Sirens",
+            "id": "21050030",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit DMG",
+            "base_main": "16",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Augment",
             "id": "21050074",
             "rarity": "4-star",
@@ -617,6 +627,14 @@
             "base_main": "10.8",
             "passive": "ATK%",
             "passive_stat": "12"
+        },
+        {
+            "name": "Bloodpact's Pledge",
+            "id": "21020026",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "ER",
+            "base_main": "8.6"
         },
         {
             "name": "Emerald of Genesis",

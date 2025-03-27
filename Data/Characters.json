@@ -84,6 +84,20 @@
         "ER": 100
     },
     {
+        "name": "Cantarella",
+        "id": "34",
+        "title": "kanteleila",
+        "weaponType": "Rectifier",
+        "element": "Havoc",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Support",
+        "HP": 928,
+        "ATK": 32,
+        "DEF": 90,
+        "ER": 100
+    },
+    {
         "name": "Changli",
         "id": "26",
         "title": "changli",

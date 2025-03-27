@@ -321,7 +321,7 @@
         "name": "Hurriclaw",
         "id": "32032",
         "cost": 3,
-        "elements": ["Tidebreaking"]
+        "elements": ["Tidebreaking", "Gust"]
     },
     {
         "name": "Impermanence Heron",
@@ -411,7 +411,7 @@
         "name": "Rage Against the Statue",
         "id": "32031",
         "cost": 3,
-        "elements": ["Radiance"]
+        "elements": ["Radiance", "Gust"]
     },
     {
         "name": "Rocksteady Guardian",
@@ -580,5 +580,59 @@
         "id": "YZ_33017",
         "cost": 4,
         "elements": ["Electro"]
+    },
+    {
+        "name": "La Guardia",
+        "id": "31052",
+        "cost": 1,
+        "elements": ["Midnight", "Gust"]
+    },
+    {
+        "name": "Sagittario",
+        "id": "31053",
+        "cost": 1,
+        "elements": ["Radiance", "Gust"]
+    },
+    {
+        "name": "Sacerdos",
+        "id": "31054",
+        "cost": 1,
+        "elements": ["Gust"]
+    },
+    {
+        "name": "Aero Drake",
+        "id": "31055",
+        "cost": 1,
+        "elements": ["Tidebreaking", "Gust"]
+    },
+    {
+        "name": "Electro Drake",
+        "id": "31056",
+        "cost": 1,
+        "elements": ["Midnight", "Gust"]
+    },
+    {
+        "name": "Glacio Drake",
+        "id": "31057",
+        "cost": 1,
+        "elements": ["Gust"]
+    },
+    {
+        "name": "Capitaneus",
+        "id": "32033",
+        "cost": 3,
+        "elements": ["Radiance", "Gust"]
+    },
+    {
+        "name": "Fleurdelys",
+        "id": "34012",
+        "cost": 4,
+        "elements": ["Gust"]
+    },
+    {
+        "name": "Nightmare Lampylumen Myriad",
+        "id": "34013",
+        "cost": 4,
+        "elements": ["Frosty", "Empyrean"]
     }
 ]
