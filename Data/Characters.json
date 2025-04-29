@@ -126,6 +126,20 @@
         "ER": 100
     },
     {
+        "name": "Ciaccona",
+        "id": "37",
+        "title": "xiakong",
+        "weaponType": "Pistol",
+        "element": "Aero",
+        "Bonus1": "Crit DMG",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 979,
+        "ATK": 30,
+        "DEF": 98,
+        "ER": 100
+    },
+    {
         "name": "Danjin",
         "id": "10",
         "title": "micai",
@@ -417,6 +431,20 @@
         "HP": 682,
         "ATK": 18,
         "DEF": 134,
+        "ER": 100
+    },
+    {
+        "name": "Zani",
+        "id": "38",
+        "title": "zanni",
+        "weaponType": "Gauntlet",
+        "element": "Spectro",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 862,
+        "ATK": 35,
+        "DEF": 93,
         "ER": 100
     },
     {

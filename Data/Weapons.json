@@ -211,6 +211,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Woodland Aria",
+            "id": "21030026",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit Rate",
+            "base_main": "8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Cadenza",
             "id": "21030024",
             "rarity": "4-star",
@@ -485,6 +495,16 @@
             "base_main": "8.1",
             "passive": "ER",
             "passive_stat": "12.8"
+        },
+        {
+            "name": "Blazing Justice",
+            "id": "21040019",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
         },
         {
             "name": "Tragicomedy",
