@@ -187,7 +187,9 @@ def get_element_region(image):
 
 def determine_element(image, echo_name: str):
     """Match element using SIFT features, filtered by possible elements"""
-    possible_elements = ECHO_ELEMENTS.get(echo_name, ["Unknown"])
+    base_name = echo_name.replace("Phantom ", "") if echo_name.startswith("Phantom ") else echo_name
+    
+    possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
     
     sift = SIFT_create()
     flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
