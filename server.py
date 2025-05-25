@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import cv2
 import numpy as np
 import base64
-from concurrent.futures import TimeoutError, ProcessPoolExecutor
+from concurrent.futures import TimeoutError, ThreadPoolExecutor
 from typing import Optional
 from card import process_card
 from char import process_char
@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
     executor.shutdown(wait=True)
 
 app = FastAPI(lifespan=lifespan)
-executor = ProcessPoolExecutor(max_workers=MAX_WORKERS)
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 rate_limiter = RateLimiter()
 
 app.add_middleware(
