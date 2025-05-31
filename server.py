@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import cv2
 import numpy as np
 import base64
-from concurrent.futures import TimeoutError, ThreadPoolExecutor
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from typing import Optional
 from card import process_card
 from char import process_char
@@ -15,7 +15,7 @@ import os
 import asyncio
 from contextlib import asynccontextmanager
 
-MAX_WORKERS = 12
+MAX_WORKERS = 5
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
     executor.shutdown(wait=True)
 
 app = FastAPI(lifespan=lifespan)
-executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+executor = ProcessPoolExecutor(max_workers=MAX_WORKERS)
 rate_limiter = RateLimiter()
 
 app.add_middleware(
