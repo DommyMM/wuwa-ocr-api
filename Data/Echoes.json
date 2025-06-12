@@ -585,54 +585,102 @@
         "name": "La Guardia",
         "id": "31052",
         "cost": 1,
-        "elements": ["Midnight", "Gust"]
+        "elements": ["Midnight", "Gust", "Flaming"]
     },
     {
         "name": "Sagittario",
         "id": "31053",
         "cost": 1,
-        "elements": ["Radiance", "Gust"]
+        "elements": ["Radiance", "Gust", "Flaming"]
     },
     {
         "name": "Sacerdos",
         "id": "31054",
         "cost": 1,
-        "elements": ["Gust"]
+        "elements": ["Gust", "Windward"]
     },
     {
         "name": "Aero Drake",
         "id": "31055",
         "cost": 1,
-        "elements": ["Tidebreaking", "Gust"]
+        "elements": ["Tidebreaking", "Gust", "Flaming"]
     },
     {
         "name": "Electro Drake",
         "id": "31056",
         "cost": 1,
-        "elements": ["Midnight", "Gust"]
+        "elements": ["Midnight", "Gust", "Flaming"]
     },
     {
         "name": "Glacio Drake",
         "id": "31057",
         "cost": 1,
-        "elements": ["Gust"]
+        "elements": ["Gust", "Windward"]
     },
     {
         "name": "Capitaneus",
         "id": "32033",
         "cost": 3,
-        "elements": ["Radiance", "Gust"]
+        "elements": ["Radiance", "Gust", "Windward"]
     },
     {
         "name": "Fleurdelys",
         "id": "34012_1",
         "cost": 4,
-        "elements": ["Gust"]
+        "elements": ["Gust", "Windward"]
     },
     {
         "name": "Nightmare Lampylumen Myriad",
         "id": "34013",
         "cost": 4,
         "elements": ["Frosty", "Empyrean"]
+    },
+    {
+        "name": "Fusion Drake",
+        "id": "31058",
+        "cost": 1,
+        "elements": ["Windward", "Flaming"]
+    },
+    {
+        "name": "Spectro Drake",
+        "id": "31059", 
+        "cost": 1,
+        "elements": ["Windward", "Flaming"]
+    },
+    {
+        "name": "Havoc Drake",
+        "id": "31060",
+        "cost": 1,
+        "elements": ["Windward", "Flaming"]
+    },
+    {
+        "name": "Devotees Flesh",
+        "id": "31061",
+        "cost": 1,
+        "elements": ["Windward", "Flaming", "Gust"]
+    },
+    {
+        "name": "Kerasaur",
+        "id": "31062",
+        "cost": 3,
+        "elements": ["Windward", "Flaming"]
+    },
+    {
+        "name": "Pilgrims Shell",
+        "id": "32034",
+        "cost": 3,
+        "elements": ["Windward", "Flaming"]
+    },
+    {
+        "name": "Nightmare Kelpie",
+        "id": "33021",
+        "cost": 4,
+        "elements": ["Gust", "Windward"]
+    },
+    {
+        "name": "Lioness of Glory",
+        "id": "33022",
+        "cost": 4,
+        "elements": ["Flaming"]
     }
 ]

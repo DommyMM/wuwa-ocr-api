@@ -363,6 +363,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Wildfire Mark",
+            "id": "21010036",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Autumntrace",
             "id": "21010074",
             "rarity": "4-star",
@@ -655,6 +665,16 @@
             "ATK": "47",
             "main_stat": "ER",
             "base_main": "8.6"
+        },
+        {
+            "name": "Defier's Thorn",
+            "id": "21020056",
+            "rarity": "5-star",
+            "ATK": "33",
+            "main_stat": "HP",
+            "base_main": "16.05",
+            "passive": "HP%",
+            "passive_stat": "12"
         },
         {
             "name": "Emerald of Genesis",
