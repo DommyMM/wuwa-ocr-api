@@ -353,11 +353,20 @@ def process_card(image, region: str):
             # Process names - combine DMG lines
             cleaned_names = []
             for line in names_lines:
-                if line.startswith("DMG") and cleaned_names:
-                    cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
+                print(f"Processing line: '{line}'")
+                # Combine if line is "Bonus", "DMGBonus", or starts with "DMG"
+                if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
+                    print(f"  Combining: '{cleaned_names[-1]}' + '{line}'")
+                    if line == "Bonus":
+                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
+                    elif line == "DMGBonus":
+                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
+                    else:  # starts with "DMG"
+                        cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
                 else:
                     cleaned_line = line.strip()
-                    if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit"):    # Add Bonus to lines ending with DMG (except Crit DMG)
+                    # Preserve old behavior: add "Bonus" to lines ending with "DMG" (except Crit)
+                    if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
                         cleaned_line = f"{cleaned_line} Bonus"
                     cleaned_names.append(cleaned_line)
             values = values_lines[:5]
