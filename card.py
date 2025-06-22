@@ -353,7 +353,6 @@ def process_card(image, region: str):
             # Process names - combine DMG lines
             cleaned_names = []
             for line in names_lines:
-                print(f"Processing line: '{line}'")
                 # Combine if line is "Bonus", "DMGBonus", or starts with "DMG"
                 if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
                     print(f"  Combining: '{cleaned_names[-1]}' + '{line}'")
