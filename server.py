@@ -19,7 +19,15 @@ MAX_WORKERS = 5
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
+consecutive_500s = 0
+MAX_CONSECUTIVE_500S = 3
 
+def force_restart(reason: str):
+    print(f"FORCING RESTART: {reason}")
+    print("Railway will automatically restart the service...")
+    time.sleep(1)  # Give time for log to be written
+    os._exit(1)  # Hard exit that Railway will detect
+    
 class RateLimiter:
     def __init__(self):
         self.requests = defaultdict(list)
@@ -102,7 +110,12 @@ async def process_card_image(image_bytes: bytes, type: str):
     except TimeoutError:
         raise HTTPException(status_code=408, detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
+        error_msg = str(e)
+        
+        if "terminated abruptly" in error_msg.lower():
+            force_restart(f"ProcessPool worker terminated abruptly: {error_msg}")
+            
+        raise HTTPException(status_code=400, detail=f"Image processing error: {error_msg}")
 
 async def process_char_image(image_bytes: bytes, type: str):
     try:
@@ -119,10 +132,17 @@ async def process_char_image(image_bytes: bytes, type: str):
     except TimeoutError:
         raise HTTPException(status_code=408, detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
+        error_msg = str(e)
+        
+        if "terminated abruptly" in error_msg.lower():
+            force_restart(f"ProcessPool worker terminated abruptly: {error_msg}")
+            
+        raise HTTPException(status_code=400, detail=f"Image processing error: {error_msg}")
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
+    global consecutive_500s
+
     request_start = time.perf_counter()
     print(f"\n=== New {image_data.type.capitalize()} Image Request ===")
     print(f"Origin: {request.headers.get('origin', 'unknown')}")
@@ -150,10 +170,19 @@ async def process_image_request(request: Request, image_data: ImageRequest):
             )
             
         print(f"Total request time: {time.perf_counter() - request_start:.2f}s")
+        
+        consecutive_500s = 0
         return result
         
     except Exception as e:
         print(f"Error processing request: {str(e)}")
+        
+        consecutive_500s += 1
+        print(f"Consecutive 500 errors: {consecutive_500s}/{MAX_CONSECUTIVE_500S}")
+        
+        if consecutive_500s >= MAX_CONSECUTIVE_500S:
+            force_restart(f"Too many consecutive 500 errors ({consecutive_500s})")
+        
         return JSONResponse(
             status_code=500,
             content={
