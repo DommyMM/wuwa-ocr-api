@@ -81,7 +81,7 @@
         "name": "Chop Chop",
         "id": "32028",
         "cost": 3,
-        "elements": ["Empyrean", "Tidebreaking"]
+        "elements": ["Empyrean", "Tidebreaking", "Dream"]
     },
     {
         "name": "Chop Chop Headless",
@@ -183,7 +183,7 @@
         "name": "Fae Ignis",
         "id": "31043",
         "cost": 1,
-        "elements": ["Radiance", "Midnight"]
+        "elements": ["Radiance", "Midnight", "Dream"]
     },
     {
         "name": "Fallacy of No Return",
@@ -682,5 +682,35 @@
         "id": "33022",
         "cost": 4,
         "elements": ["Flaming"]
+    },
+    {
+        "name": "Nightmare Havoc Warrior",
+        "id": "31063",
+        "cost": 1,
+        "elements": ["Dream"]
+    },
+    {
+        "name": "Nightmare Glacio",
+        "id": "31064",
+        "cost": 1,
+        "elements": ["Dream"]
+    },
+    {
+        "name": "Nightmare Tambourinist",
+        "id": "32043",
+        "cost": 3,
+        "elements": ["Dream"]
+    },
+    {
+        "name": "Nightmare Hecate",
+        "id": "34016",
+        "cost": 4,
+        "elements": ["Dream"]
+    },
+    {
+        "name": "Fenrico",
+        "id": "34015_2",
+        "cost": 4,
+        "elements": ["Dream"]
     }
 ]

@@ -11,6 +11,16 @@
             "passive_stat": "12.8"
         },
         {
+            "name": "Lethean Elegy",
+            "id": "21050066",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Luminous Hymn",
             "id": "21050029",
             "rarity": "5-star",
