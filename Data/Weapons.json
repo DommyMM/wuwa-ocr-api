@@ -135,6 +135,14 @@
             "base_main": "4.1"
         },
         {
+            "name": "Radiant Dawn",
+            "id": "21050104",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit DMG",
+            "base_main": "9"
+        },
+        {
             "name": "Guardian Rectifier",
             "id": "21050053",
             "rarity": "3-star",
@@ -271,6 +279,14 @@
             "base_main": "4.1"
         },
         {
+            "name": "Solar Flame",
+            "id": "21030104",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit Rate",
+            "base_main": "4.5"
+        },
+        {
             "name": "Thunderbolt",
             "id": "21030074",
             "rarity": "4-star",
@@ -350,6 +366,16 @@
             "main_stat": "Crit Rate",
             "base_main": "5.4",
             "passive": "Attribute",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Thunderflare Dominion",
+            "id": "21010046",
+            "rarity": "5-star",
+            "ATK": "54",
+            "main_stat": "Crit Rate",
+            "base_main": "2.7",
+            "passive": "ATK%",
             "passive_stat": "12"
         },
         {
@@ -439,6 +465,14 @@
             "ATK": "37",
             "main_stat": "ATK",
             "base_main": "4"
+        },
+        {
+            "name": "Aureate Zenith",
+            "id": "21010104",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit DMG",
+            "base_main": "9"
         },
         {
             "name": "Beguiling Melody",
@@ -547,6 +581,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Moongazer's Sigil",
+            "id": "21040046",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit Rate",
+            "base_main": "8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Amity Accord",
             "id": "21040044",
             "rarity": "4-star",
@@ -585,6 +629,14 @@
             "ATK": "37",
             "main_stat": "ATK",
             "base_main": "4.1"
+        },
+        {
+            "name": "Aether Strike",
+            "id": "21040104",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit DMG",
+            "base_main": "9"
         },
         {
             "name": "Marcato",
@@ -739,6 +791,14 @@
             "ATK": "37",
             "main_stat": "ATK",
             "base_main": "4.1"
+        },
+        {
+            "name": "Feather Edge",
+            "id": "21020104",
+            "rarity": "4-star",
+            "ATK": "33",
+            "main_stat": "Crit Rate",
+            "base_main": "4.5"
         },
         {
             "name": "Lumingloss",

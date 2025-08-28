@@ -14,6 +14,20 @@
         "ER": 100
     },
     {
+        "name": "Augusta",
+        "id": "51",
+        "title": "aogusita",
+        "weaponType": "Broadblade",
+        "element": "Electro",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 824,
+        "ATK": 37,
+        "DEF": 91,
+        "ER": 100
+    },
+    {
         "name": "Baizhi",
         "id": "6",
         "title": "bailian",
@@ -56,34 +70,6 @@
         "ER": 100
     },
     {
-        "name": "Carlotta",
-        "id": "32",
-        "title": "kelaita",
-        "weaponType": "Pistol",
-        "element": "Glacio",
-        "Bonus1": "Crit Rate",
-        "Bonus2": "ATK",
-        "Role": "DPS",
-        "HP": 996,
-        "ATK": 37,
-        "DEF": 98,
-        "ER": 100
-    },
-    {
-        "name": "Carthethyia",
-        "id": "40",
-        "title": "katixiya",
-        "weaponType": "Sword",
-        "element": "Aero",
-        "Bonus1": "Crit Rate",
-        "Bonus2": "HP",
-        "Role": "DPS",
-        "HP": 1184,
-        "ATK": 25,
-        "DEF": 50,
-        "ER": 100
-    },
-    {
         "name": "Camellya",
         "id": "29",
         "title": "chun",
@@ -109,6 +95,34 @@
         "HP": 928,
         "ATK": 32,
         "DEF": 90,
+        "ER": 100
+    },
+    {
+        "name": "Carlotta",
+        "id": "32",
+        "title": "kelaita",
+        "weaponType": "Pistol",
+        "element": "Glacio",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 996,
+        "ATK": 37,
+        "DEF": 98,
+        "ER": 100
+    },
+    {
+        "name": "Carthethyia",
+        "id": "40",
+        "title": "katixiya",
+        "weaponType": "Sword",
+        "element": "Aero",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "HP",
+        "Role": "DPS",
+        "HP": 1184,
+        "ATK": 25,
+        "DEF": 50,
         "ER": 100
     },
     {
@@ -182,6 +196,20 @@
         "ER": 100
     },
     {
+        "name": "Iuno",
+        "id": "48",
+        "title": "younuo",
+        "weaponType": "Gauntlet",
+        "element": "Aero",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 842,
+        "ATK": 36,
+        "DEF": 92,
+        "ER": 100
+    },
+    {
         "name": "Jianxin",
         "id": "23",
         "title": "jiexin",
@@ -251,7 +279,7 @@
         "DEF": 72,
         "ER": 100
     },
-        {
+    {
         "name": "Lupa",
         "id": "46",
         "title": "lupa",
@@ -308,6 +336,20 @@
         "ER": 100
     },
     {
+        "name": "Roccia",
+        "id": "33",
+        "title": "luokeke",
+        "weaponType": "Gauntlet",
+        "element": "Havoc",
+        "Bonus1": "Crit DMG",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 980,
+        "ATK": 30,
+        "DEF": 98,
+        "ER": 100
+    },
+    {
         "name": "Rover (F)",
         "id": "5",
         "title": "zhujue",
@@ -333,20 +375,6 @@
         "HP": 912,
         "ATK": 30,
         "DEF": 112,
-        "ER": 100
-    },
-    {
-        "name": "Roccia",
-        "id": "33",
-        "title": "luokeke",
-        "weaponType": "Gauntlet",
-        "element": "Havoc",
-        "Bonus1": "Crit DMG",
-        "Bonus2": "ATK",
-        "Role": "Concerto",
-        "HP": 980,
-        "ATK": 30,
-        "DEF": 98,
         "ER": 100
     },
     {

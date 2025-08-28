@@ -51,7 +51,7 @@
         "name": "Calcified Junrock",
         "id": "31050",
         "cost": 1,
-        "elements": ["Empyrean", "Tidebreaking"]
+        "elements": ["Empyrean", "Tidebreaking", "Crown"]
     },
     {
         "name": "Carapace",
@@ -261,7 +261,7 @@
         "name": "Golden Junrock",
         "id": "31049",
         "cost": 1,
-        "elements": ["Frosty", "Radiance"]
+        "elements": ["Frosty", "Radiance", "Law"]
     },
     {
         "name": "Gulpuff",
@@ -321,7 +321,7 @@
         "name": "Hurriclaw",
         "id": "32032",
         "cost": 3,
-        "elements": ["Tidebreaking", "Gust"]
+        "elements": ["Tidebreaking", "Gust", "Crown"]
     },
     {
         "name": "Impermanence Heron",
@@ -411,7 +411,7 @@
         "name": "Rage Against the Statue",
         "id": "32031",
         "cost": 3,
-        "elements": ["Radiance", "Gust"]
+        "elements": ["Radiance", "Gust", "Law"]
     },
     {
         "name": "Rocksteady Guardian",
@@ -711,6 +711,60 @@
         "name": "Fenrico",
         "id": "34015_2",
         "cost": 4,
-        "elements": ["Dream"]
+        "elements": ["Dream", "Law"]
+    },
+    {
+        "name": "Corrosaurus",
+        "id": "32044",
+        "cost": 3,
+        "elements": ["Flaming"]
+    },
+    {
+        "name": "The False Sovereign",
+        "id": "34017",
+        "cost": 4,
+        "elements": ["Crown"]
+    },
+    {
+        "name": "Lady of the Sea",
+        "id": "34018",
+        "cost": 4,
+        "elements": ["Crown"]
+    },
+    {
+        "name": "Nightmare: Violet-Feathered Heron",
+        "id": "32045",
+        "cost": 3,
+        "elements": ["Crown"]
+    },
+    {
+        "name": "Nightmare: Cyan-Feathered Heron",
+        "id": "32046",
+        "cost": 3,
+        "elements": ["Law"]
+    },
+    {
+        "name": "Nightmare: Electro Predator",
+        "id": "31065",
+        "cost": 1,
+        "elements": ["Crown"]
+    },
+    {
+        "name": "Nightmare: Aero Predator",
+        "id": "31066",
+        "cost": 1,
+        "elements": ["Crown"]
+    },
+    {
+        "name": "Nightmare: Gulpuff",
+        "id": "31067",
+        "cost": 1,
+        "elements": ["Law"]
+    },
+    {
+        "name": "Nightmare: Chirpuff",
+        "id": "31068",
+        "cost": 1,
+        "elements": ["Law"]
     }
 ]
