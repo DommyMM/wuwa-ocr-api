@@ -690,7 +690,7 @@
         "elements": ["Dream"]
     },
     {
-        "name": "Nightmare Glacio",
+        "name": "Nightmare Glacio Predator",
         "id": "31064",
         "cost": 1,
         "elements": ["Dream"]
@@ -732,37 +732,37 @@
         "elements": ["Crown"]
     },
     {
-        "name": "Nightmare: Violet-Feathered Heron",
+        "name": "Nightmare Violet-Feathered Heron",
         "id": "32045",
         "cost": 3,
         "elements": ["Crown"]
     },
     {
-        "name": "Nightmare: Cyan-Feathered Heron",
+        "name": "Nightmare Cyan-Feathered Heron",
         "id": "32046",
         "cost": 3,
         "elements": ["Law"]
     },
     {
-        "name": "Nightmare: Electro Predator",
+        "name": "Nightmare Electro Predator",
         "id": "31065",
         "cost": 1,
         "elements": ["Crown"]
     },
     {
-        "name": "Nightmare: Aero Predator",
+        "name": "Nightmare Aero Predator",
         "id": "31066",
         "cost": 1,
         "elements": ["Crown"]
     },
     {
-        "name": "Nightmare: Gulpuff",
+        "name": "Nightmare Gulpuff",
         "id": "31067",
         "cost": 1,
         "elements": ["Law"]
     },
     {
-        "name": "Nightmare: Chirpuff",
+        "name": "Nightmare Chirpuff",
         "id": "31068",
         "cost": 1,
         "elements": ["Law"]
