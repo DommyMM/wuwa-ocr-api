@@ -156,7 +156,8 @@ def parse_region_text(name, text):
             main_value = main_value.replace('422', '22')
             
             substats = []
-            for line in lines[1:]:
+            for i, line in enumerate(lines[1:], 1):
+                print(f"Substat {i}: '{line}'")
                 parts = line.rsplit(' ', 1)
                 if len(parts) != 2:
                     continue
@@ -165,12 +166,15 @@ def parse_region_text(name, text):
                 name = clean_stat_name(stat_name, stat_value)
                 name = validate_stat(name, SUB_STATS.keys())
                 value = validate_value(stat_value, name)
-                substats.append({"name": name.replace("DMG Bonus", ""), "value": value})
+                final_name = name.replace("DMG Bonus", "")
+                substats.append({"name": final_name, "value": value})
             
-            return {
+            result = {
                 "main": {"name": main_name, "value": main_value},
                 "substats": substats
             }
+            print(f"Final result: {result}")
+            return result
             
         case _:
             return text
@@ -352,10 +356,9 @@ def process_card(image, region: str):
             
             # Process names - combine DMG lines
             cleaned_names = []
-            for line in names_lines:
+            for i, line in enumerate(names_lines):
                 # Combine if line is "Bonus", "DMGBonus", or starts with "DMG"
                 if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
-                    print(f"  Combining: '{cleaned_names[-1]}' + '{line}'")
                     if line == "Bonus":
                         cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
                     elif line == "DMGBonus":
