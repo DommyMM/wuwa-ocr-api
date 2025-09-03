@@ -80,7 +80,8 @@ app = FastAPI(lifespan=lifespan)
 # Pass worker_init and log_queue to ProcessPoolExecutor for proper logging in subprocesses
 executor = ProcessPoolExecutor(
     max_workers=MAX_WORKERS,
-    initializer=worker_init
+    initializer=worker_init,
+    initargs=(get_multiprocess_queue(),)
 )
 rate_limiter = RateLimiter()
 

@@ -89,16 +89,22 @@ def setup_multiprocess_logging(level=None):
         sys.stderr.reconfigure(line_buffering=True)
 
 
-def worker_init():
+def worker_init(queue):
     """
     Initialize logging in a worker process.
     Pass this to ProcessPoolExecutor's initializer parameter.
+    
+    Args:
+        queue: The multiprocessing Queue for log messages
     """
+    global log_queue
+    log_queue = queue
+    
     # Reconfigure stdout/stderr for unbuffered output in worker
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
     
-    # Set up the logger for this worker
+    # Set up the logger for this worker - this will now use the queue
     setup_logger()
 
 
