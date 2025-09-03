@@ -4,3 +4,4 @@ venv/
 .env
 wuwa*.png
 hsv.py
+.claude

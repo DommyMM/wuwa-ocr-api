@@ -8,6 +8,9 @@ from card import preprocess_region
 from data import CHARACTER_NAMES, WEAPON_NAMES, WEAPON_DATA
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
+from logger import setup_logger
+
+logger = setup_logger(__name__)
 
 ELEMENTS = ["Aero", "Glacio", "Electro", "Havoc", "Fusion", "Spectro"]
 
@@ -208,7 +211,7 @@ def process_sequences(image: np.ndarray) -> Dict[str, Any]:
         if is_active:
             sequence_sum += 1
     
-    print(f"Total active: {sequence_sum}/6")
+    logger.debug(f"Total active sequences: {sequence_sum}/6")
     
     return {
         "success": True,
@@ -224,7 +227,7 @@ def process_forte(image: np.ndarray) -> Dict[str, Any]:
     results = {}
     height, width = image.shape[:2]
 
-    print("\n=== Forte Detection ===")
+    logger.debug("Starting forte detection")
     for branch in branches:
         base_region = REGIONS[f'{branch}Base']
         base_cropped = crop_region(image, base_region)
@@ -234,7 +237,7 @@ def process_forte(image: np.ndarray) -> Dict[str, Any]:
         top_active = process_node(image, REGIONS[f'{branch}Top'], branch == 'circuit')
         mid_active = process_node(image, REGIONS[f'{branch}Mid'], branch == 'circuit')
         results[branch] = [level, top_active, mid_active]
-        print(f"{branch:12} Lv.{level:2d} [{top_active},{mid_active}]")
+        logger.debug(f"Forte {branch:12} Lv.{level:2d} [{top_active},{mid_active}]")
 
     return {
         "success": True,
