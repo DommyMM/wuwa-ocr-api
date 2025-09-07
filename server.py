@@ -16,7 +16,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import sys
 
-MAX_WORKERS = 5
+MAX_WORKERS = 8
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))

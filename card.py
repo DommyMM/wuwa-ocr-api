@@ -252,13 +252,20 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     best_match, best_conf = sorted_matches[0]
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
     
+    # Only log top matches when they're close (within 15% confidence)
+    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
+        print(f"Close echo matches detected: {[(name, f'{conf:.1%}') for name, conf in sorted_matches[:3]]}", flush=True)
+    
     if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
         actual_cost = get_echo_cost(image)
+        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}", flush=True)
         if actual_cost in [1, 3, 4]:
             best_cost = ECHO_COSTS.get(best_match, 0)
             if best_cost != actual_cost:
+                print(f"Best match '{best_match}' has cost {best_cost}, looking for cost {actual_cost} match", flush=True)
                 for name, conf in secondary_matches:
                     if ECHO_COSTS.get(name, 0) == actual_cost:
+                        print(f"Cost-based selection: {name} (matches cost {actual_cost})", flush=True)
                         return (name, conf)
     return sorted_matches[0]
 
@@ -376,9 +383,11 @@ def process_card(image, region: str):
             cleaned_text = f"{main_text}\n{subs_text}"
             
             name, confidence = match_icon(image)
+            print(f"Echo identified: {name} (confidence: {confidence:.2%})", flush=True)
             echo_data = parse_region_text(region, cleaned_text)
             element_region = get_element_region(image)
             element_data = determine_element(element_region, name)
+            print(f"Echo element: {element_data}", flush=True)
             
             return {
                 "success": True,
