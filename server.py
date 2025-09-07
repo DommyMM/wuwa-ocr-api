@@ -14,7 +14,7 @@ from collections import defaultdict
 import os
 import asyncio
 from contextlib import asynccontextmanager
-from logger import setup_logger, setup_multiprocess_logging, worker_init, get_multiprocess_queue, shutdown_logging
+import sys
 
 MAX_WORKERS = 5
 PROCESS_TIMEOUT = 60
@@ -23,13 +23,12 @@ PORT = int(os.getenv("PORT", "5000"))
 consecutive_500s = 0
 MAX_CONSECUTIVE_500S = 3
 
-# Initialize logging for main process
-setup_multiprocess_logging()
-logger = setup_logger(__name__)
+# Ensure output is flushed for Railway
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 def force_restart(reason: str):
-    logger.critical(f"FORCING RESTART: {reason}")
-    logger.info("Railway will automatically restart the service...")
+    print(f"FORCING RESTART: {reason}", flush=True)
     time.sleep(1)  # Give time for log to be written
     os._exit(1)  # Hard exit that Railway will detect
     
@@ -70,18 +69,20 @@ class APIStatus(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Starting FastAPI server on port {PORT}")
+    print(f"Server starting on port {PORT}", flush=True)
     yield
-    logger.info("Shutting down server...")
+    print("Server shutting down", flush=True)
     executor.shutdown(wait=True)
-    shutdown_logging()
 
 app = FastAPI(lifespan=lifespan)
-# Pass worker_init and log_queue to ProcessPoolExecutor for proper logging in subprocesses
+def worker_init():
+    """Ensure worker output is flushed"""
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
 executor = ProcessPoolExecutor(
     max_workers=MAX_WORKERS,
-    initializer=worker_init,
-    initargs=(get_multiprocess_queue(),)
+    initializer=worker_init
 )
 rate_limiter = RateLimiter()
 
@@ -157,8 +158,7 @@ async def process_image_request(request: Request, image_data: ImageRequest):
     global consecutive_500s
 
     request_start = time.perf_counter()
-    logger.info(f"New {image_data.type.capitalize()} Image Request")
-    logger.debug(f"Origin: {request.headers.get('origin', 'unknown')}")
+    print(f"{image_data.type}: Processing request", flush=True)
         
     try:
         image_str = image_data.image
@@ -181,16 +181,17 @@ async def process_image_request(request: Request, image_data: ImageRequest):
                 }
             )
             
-        logger.info(f"Request completed successfully. Total time: {time.perf_counter() - request_start:.2f}s")
+        print(f"{image_data.type}: Completed in {time.perf_counter() - request_start:.2f}s", flush=True)
         
         consecutive_500s = 0
         return result
         
     except Exception as e:
-        logger.error(f"Error processing request: {str(e)}")
+        print(f"{image_data.type}: Failed - {str(e)}", flush=True)
         
         consecutive_500s += 1
-        logger.warning(f"Consecutive 500 errors: {consecutive_500s}/{MAX_CONSECUTIVE_500S}")
+        if consecutive_500s > 1:
+            print(f"Consecutive errors: {consecutive_500s}/{MAX_CONSECUTIVE_500S}", flush=True)
         
         if consecutive_500s >= MAX_CONSECUTIVE_500S:
             force_restart(f"Too many consecutive 500 errors ({consecutive_500s})")
@@ -213,5 +214,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info(f"Starting Uvicorn server on 0.0.0.0:{PORT}")
+    print(f"Uvicorn starting on 0.0.0.0:{PORT}", flush=True)
     uvicorn.run(app, host="0.0.0.0", port=PORT)

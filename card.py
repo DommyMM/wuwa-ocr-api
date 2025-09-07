@@ -6,9 +6,6 @@ import numpy as np
 from rapidfuzz import process
 from typing import Tuple
 from cv2 import SIFT_create, FlannBasedMatcher
-from logger import setup_logger
-
-logger = setup_logger(__name__)
 
 
 WEAPON_REGIONS = {
@@ -160,7 +157,7 @@ def parse_region_text(name, text):
             
             substats = []
             for i, line in enumerate(lines[1:], 1):
-                logger.debug(f"Substat {i}: '{line}'")
+                print(f"Substat {i}: '{line}'", flush=True)
                 parts = line.rsplit(' ', 1)
                 if len(parts) != 2:
                     continue
@@ -176,7 +173,7 @@ def parse_region_text(name, text):
                 "main": {"name": main_name, "value": main_value},
                 "substats": substats
             }
-            logger.debug(f"Final echo result: {result}")
+            print(f"Final echo result: {result}", flush=True)
             return result
             
         case _:
