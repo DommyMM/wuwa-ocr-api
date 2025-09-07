@@ -210,6 +210,7 @@ def process_echo(image: np.ndarray):
     
     name = get_name(text_lines)
     element = get_element(name, image)
+    echo_level = get_level(text_lines)
     
     response = {
         "success": True,
@@ -217,11 +218,15 @@ def process_echo(image: np.ndarray):
             "type": "Echo",
             "name": name,
             "element": element,
-            "echoLevel": get_level(text_lines),
+            "echoLevel": echo_level,
             "main": get_main(text_lines),
             "subs": get_subs(text_lines)
         }
     }
+    
+    # Add warning if level couldn't be parsed (likely cropping issue)
+    if echo_level == "0":
+        response["warning"] = "Could not detect echo level - please ensure you're sharing a full-screen screenshot"
     
     print("\n=== Final Response ===")
     print(json.dumps(response, indent=2))
