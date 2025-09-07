@@ -1,36 +1,48 @@
-FROM python:3.10-slim
+# =======================
+# Builder stage
+# =======================
+FROM python:3.13-slim AS builder
 
-# Setup directories and files
-WORKDIR /app
+WORKDIR /build
+
+# Copy requirements and install as user (for easy copying later)
 COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# =======================
+# Runtime stage
+# =======================
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application files
 COPY Data /app/Data
 COPY *.py /app/
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    autoconf automake build-essential ca-certificates g++ git \
-    libarchive-dev libc6 libc6-dev libcurl4-openssl-dev libgif-dev \
-    libicu-dev libjpeg-dev libleptonica-dev libopencv-dev libpng-dev \
-    libtiff-dev libtool libwebp-dev make pkg-config python3-opencv wget \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Set Python path
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app
 
-# Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# OpenCV headless mode
+ENV OPENCV_HEADLESS=1
 
-# Install Tesseract
-RUN git clone https://github.com/tesseract-ocr/tesseract.git && \
-    cd tesseract && \
-    git checkout 5.5.0 && \
-    ./autogen.sh && \
-    ./configure && \
-    make && \
-    make install && \
-    ldconfig && \
-    cd .. && \
-    rm -rf tesseract && \
-    mkdir -p /usr/local/share/tessdata && \
-    wget -P /usr/local/share/tessdata https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata
+EXPOSE 5000
 
-ENV TESSDATA_PREFIX=/usr/local/share/tessdata
 ENTRYPOINT ["python", "server.py"]
