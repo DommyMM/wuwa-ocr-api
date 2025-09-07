@@ -234,6 +234,32 @@ def get_echo_cost(image: np.ndarray) -> int:
     
     return 0
 
+def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
+    """Compare color histograms between icon and template using HSV"""
+    from data import ICON_TEMPLATES
+    
+    if template_name not in ICON_TEMPLATES:
+        return 0.0
+    
+    template_img = ICON_TEMPLATES[template_name]
+    
+    # Convert both to HSV
+    icon_hsv = cv2.cvtColor(icon_img, cv2.COLOR_BGR2HSV)
+    template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
+    
+    # Calculate histograms for Hue and Saturation (ignore Value for lighting invariance)
+    hist_icon = cv2.calcHist([icon_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+    hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+    
+    # Normalize histograms
+    hist_icon = cv2.normalize(hist_icon, hist_icon).flatten()
+    hist_template = cv2.normalize(hist_template, hist_template).flatten()
+    
+    # Compare using correlation (1.0 = perfect match, -1.0 = opposite)
+    correlation = cv2.compareHist(hist_icon, hist_template, cv2.HISTCMP_CORREL)
+    
+    return correlation
+
 def match_icon(image: np.ndarray) -> Tuple[str, float]:
     """SIFT-based icon matching - returns best match with confidence check"""
     icon_img = image[0:182, 0:188]
@@ -252,9 +278,32 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     best_match, best_conf = sorted_matches[0]
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
     
-    # Only log top matches when they're close (within 15% confidence)
+    # Log when top matches are close (within 15% of each other)
     if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
-        print(f"Close echo matches detected: {[(name, f'{conf:.1%}') for name, conf in sorted_matches[:3]]}", flush=True)
+        # Show all matches within 15% of the top match
+        close_matches = [(name, f'{conf:.1%}') for name, conf in sorted_matches if (best_conf - conf) < 0.15]
+        if len(close_matches) >= 2:
+            print(f"Close echo matches detected: {close_matches[:3]}", flush=True)
+            
+            # Always use color comparison for close matches to be safe
+            icon_img = image[0:182, 0:188]
+            color_scores = []
+            for name, conf in close_matches[:3]:
+                color_score = compare_icon_colors(icon_img, name)
+                color_scores.append((name, color_score))
+                print(f"  Color match: {name} = {color_score:.3f}", flush=True)
+            
+            # Pick the best color match
+            best_color_match = max(color_scores, key=lambda x: x[1])
+            if best_color_match[0] != best_match:
+                print(f"  Color override: {best_match} -> {best_color_match[0]}", flush=True)
+                # Actually apply the override
+                best_match = best_color_match[0]
+                # Find the confidence score for this match
+                for name, conf in sorted_matches:
+                    if name == best_match:
+                        best_conf = conf
+                        break
     
     if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
         actual_cost = get_echo_cost(image)
@@ -267,7 +316,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
                     if ECHO_COSTS.get(name, 0) == actual_cost:
                         print(f"Cost-based selection: {name} (matches cost {actual_cost})", flush=True)
                         return (name, conf)
-    return sorted_matches[0]
+    return (best_match, best_conf)
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
@@ -278,7 +327,7 @@ def parse_sequence_region(image) -> int:
     GRAY_THRESHOLD = 0.75
     active_count = 0
     
-    for seq_num, region in SEQUENCE_REGIONS.items():
+    for region in SEQUENCE_REGIONS.items():
         center_x, center_y = region["center"]
         half_w = region["width"] // 2
         half_h = region["height"] // 2
@@ -387,7 +436,7 @@ def process_card(image, region: str):
             echo_data = parse_region_text(region, cleaned_text)
             element_region = get_element_region(image)
             element_data = determine_element(element_region, name)
-            print(f"Echo element: {element_data}", flush=True)
+            print(f"Echo '{name}' -> Element: {element_data}", flush=True)
             
             return {
                 "success": True,
