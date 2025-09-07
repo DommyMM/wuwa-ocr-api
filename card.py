@@ -6,6 +6,8 @@ import numpy as np
 from rapidfuzz import process
 from typing import Tuple
 from cv2 import SIFT_create, FlannBasedMatcher
+import io
+import sys
 
 
 WEAPON_REGIONS = {
@@ -157,7 +159,7 @@ def parse_region_text(name, text):
             
             substats = []
             for i, line in enumerate(lines[1:], 1):
-                print(f"Substat {i}: '{line}'", flush=True)
+                print(f"Substat {i}: '{line}'")
                 parts = line.rsplit(' ', 1)
                 if len(parts) != 2:
                     continue
@@ -173,7 +175,7 @@ def parse_region_text(name, text):
                 "main": {"name": main_name, "value": main_value},
                 "substats": substats
             }
-            print(f"Final echo result: {result}", flush=True)
+            print(f"Final echo result: {result}")
             return result
             
         case _:
@@ -283,7 +285,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
         # Show all matches within 15% of the top match
         close_matches = [(name, f'{conf:.1%}') for name, conf in sorted_matches if (best_conf - conf) < 0.15]
         if len(close_matches) >= 2:
-            print(f"Close echo matches detected: {close_matches[:3]}", flush=True)
+            print(f"Close echo matches detected: {close_matches[:3]}")
             
             # Always use color comparison for close matches to be safe
             icon_img = image[0:182, 0:188]
@@ -291,12 +293,12 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
             for name, conf in close_matches[:3]:
                 color_score = compare_icon_colors(icon_img, name)
                 color_scores.append((name, color_score))
-                print(f"  Color match: {name} = {color_score:.3f}", flush=True)
+                print(f"  Color match: {name} = {color_score:.3f}")
             
             # Pick the best color match
             best_color_match = max(color_scores, key=lambda x: x[1])
             if best_color_match[0] != best_match:
-                print(f"  Color override: {best_match} -> {best_color_match[0]}", flush=True)
+                print(f"  Color override: {best_match} -> {best_color_match[0]}")
                 # Actually apply the override
                 best_match = best_color_match[0]
                 # Find the confidence score for this match
@@ -307,14 +309,14 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     
     if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
         actual_cost = get_echo_cost(image)
-        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}", flush=True)
+        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}")
         if actual_cost in [1, 3, 4]:
             best_cost = ECHO_COSTS.get(best_match, 0)
             if best_cost != actual_cost:
-                print(f"Best match '{best_match}' has cost {best_cost}, looking for cost {actual_cost} match", flush=True)
+                print(f"Best match '{best_match}' has cost {best_cost}, looking for cost {actual_cost} match")
                 for name, conf in secondary_matches:
                     if ECHO_COSTS.get(name, 0) == actual_cost:
-                        print(f"Cost-based selection: {name} (matches cost {actual_cost})", flush=True)
+                        print(f"Cost-based selection: {name} (matches cost {actual_cost})")
                         return (name, conf)
     return (best_match, best_conf)
 
@@ -356,7 +358,14 @@ def process_card(image, region: str):
     if image is None:
         return {"success": False, "error": "No image data provided"}
     
+    # Create a buffer for this specific process's logs
+    log_buffer = io.StringIO()
+    original_stdout = sys.stdout
+    
     try:
+        # Redirect stdout to buffer for all regions
+        sys.stdout = log_buffer
+        
         if region == "sequences":
             sequence = parse_sequence_region(image)
             return {
@@ -432,11 +441,17 @@ def process_card(image, region: str):
             cleaned_text = f"{main_text}\n{subs_text}"
             
             name, confidence = match_icon(image)
-            print(f"Echo identified: {name} (confidence: {confidence:.2%})", flush=True)
+            print(f"Echo identified: {name} (confidence: {confidence:.2%})")
             echo_data = parse_region_text(region, cleaned_text)
             element_region = get_element_region(image)
             element_data = determine_element(element_region, name)
-            print(f"Echo '{name}' -> Element: {element_data}", flush=True)
+            print(f"Echo '{name}' -> Element: {element_data}")
+            
+            # Restore stdout and flush all buffered logs at once
+            sys.stdout = original_stdout
+            logs = log_buffer.getvalue()
+            if logs:
+                print(logs.rstrip(), flush=True)
             
             return {
                 "success": True,
@@ -457,7 +472,15 @@ def process_card(image, region: str):
                 "analysis": result
             }
     except Exception as e:
+        # Always restore stdout on error
+        sys.stdout = original_stdout
+        logs = log_buffer.getvalue()
+        if logs:
+            print(logs.rstrip(), flush=True)
         return {
             "success": False,
             "error": str(e)
         }
+    finally:
+        # Ensure stdout is always restored
+        sys.stdout = original_stdout
