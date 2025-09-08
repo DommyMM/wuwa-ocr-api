@@ -329,7 +329,7 @@ def parse_sequence_region(image) -> int:
     GRAY_THRESHOLD = 0.75
     active_count = 0
     
-    for region in SEQUENCE_REGIONS.items():
+    for seq_num, region in SEQUENCE_REGIONS.items():
         center_x, center_y = region["center"]
         half_w = region["width"] // 2
         half_h = region["height"] // 2
