@@ -394,28 +394,26 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     best_match, best_conf = sorted_matches[0]
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
     
-    # Log when top matches are close (within 15% of each other)
-    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
-        # Show all matches within 15% of the top match
-        close_matches = [(name, f'{conf:.1%}') for name, conf in sorted_matches if (best_conf - conf) < 0.15]
-        if len(close_matches) >= 2:
-            print(f"Close echo matches detected: {close_matches[:3]}")
-            
-            # Always use color comparison for close matches to be safe
-            icon_img = image[0:182, 0:188]
-            color_scores = []
-            for name, conf in close_matches[:3]:
-                color_score = compare_icon_colors(icon_img, name)
-                color_scores.append((name, color_score))
-                print(f"  Color match: {name} = {color_score:.3f}")
-            
-            # Pick the best color match
-            best_color_match = max(color_scores, key=lambda x: x[1])
-            if best_color_match[0] != best_match:
-                print(f"  Color override: {best_match} -> {best_color_match[0]}")
-                # Actually apply the override
-                best_match = best_color_match[0]
-                # Find the confidence score for this match
+    # Check for close matches (within 15% relative difference)
+    if len(sorted_matches) > 1:
+        confidence_gap = (best_conf - sorted_matches[1][1]) / best_conf if best_conf > 0 else 1.0
+
+        if confidence_gap < 0.15:  # Matches are within 15% of each other (relative)
+            close_matches = [(name, conf) for name, conf in sorted_matches
+                if (best_conf - conf) / best_conf < 0.15]
+
+            if len(close_matches) >= 2:
+                icon_img = image[0:182, 0:188]
+                color_scores = []
+                for name, conf in close_matches[:3]:
+                    color_score = compare_icon_colors(icon_img, name)
+                    color_scores.append((name, color_score))
+
+                # Pick the best color match
+                best_color_match = max(color_scores, key=lambda x: x[1])
+                if best_color_match[0] != best_match:
+                    print(f"Color override: {best_match} -> {best_color_match[0]}")
+                    best_match = best_color_match[0]
                 for name, conf in sorted_matches:
                     if name == best_match:
                         best_conf = conf
