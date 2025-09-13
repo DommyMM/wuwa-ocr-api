@@ -394,13 +394,13 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     best_match, best_conf = sorted_matches[0]
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
     
-    # Use color comparison only when SIFT genuinely can't decide between close matches
-    if best_conf > 0.12:
-        # Find matches within 8% of best match (only genuine SIFT uncertainty)
+    # Use color comparison when top matches are close (old logic) + minimum confidence filter
+    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
+        # Show all matches within 15% of the top match, but only include decent matches (>10%)
         close_matches = [(name, conf) for name, conf in sorted_matches
-            if (best_conf - conf) < 0.08]
+                        if (best_conf - conf) < 0.15 and conf > 0.10]
 
-        if len(close_matches) >= 2:  # Only if there are actually multiple close matches
+        if len(close_matches) >= 2:  # Only if there are actually multiple decent close matches
             # Log close matches with their confidence scores
             close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
             print(f"Close matches detected: {close_scores}")
