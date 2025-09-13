@@ -396,9 +396,17 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
     
     # Use color comparison when top matches are close (old logic) + minimum confidence filter
     if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
-        # Show all matches within 15% of the top match, but only include decent matches (>10%)
+        # Include all decent matches (>10%) regardless of gap from top - let color decide
         close_matches = [(name, conf) for name, conf in sorted_matches
-                        if (best_conf - conf) < 0.15 and conf > 0.10]
+                        if conf > 0.10]
+
+        # If we have multiple nightmare variants, something's wrong - filter out the weaker nightmare
+        nightmare_count = sum(1 for name, conf in close_matches if "Nightmare" in name)
+        if nightmare_count >= 2:
+            print(f"Multiple nightmare variants detected, filtering weaker nightmare")
+            # Keep the strongest nightmare and remove other nightmares
+            best_nightmare = max([m for m in close_matches if "Nightmare" in m[0]], key=lambda x: x[1])
+            close_matches = [m for m in close_matches if "Nightmare" not in m[0] or m == best_nightmare]
 
         if len(close_matches) >= 2:  # Only if there are actually multiple decent close matches
             # Log close matches with their confidence scores
