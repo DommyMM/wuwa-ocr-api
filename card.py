@@ -259,31 +259,122 @@ def get_echo_cost(image: np.ndarray) -> int:
     
     return 0
 
+def calculate_vibrancy_score(img: np.ndarray) -> float:
+    """Calculate vibrancy score based on color intensity and distribution"""
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(img, (1, 1, 1), (255, 255, 255))
+
+    h, s, v = cv2.split(hsv)
+    s_masked = s[mask > 0]
+    v_masked = v[mask > 0]
+
+    if len(s_masked) == 0:
+        return 0.0
+
+    avg_saturation = np.mean(s_masked)
+    avg_brightness = np.mean(v_masked)
+
+    # Vibrancy combines saturation and brightness
+    return (avg_saturation * 0.6 + avg_brightness * 0.4) / 2.55
+
+def analyze_nightmare_indicators(img: np.ndarray) -> dict:
+    """Analyze image for nightmare variant indicators"""
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(img, (1, 1, 1), (255, 255, 255))
+
+    h, s, v = cv2.split(hsv)
+    s_masked = s[mask > 0]
+    v_masked = v[mask > 0]
+
+    if len(s_masked) == 0:
+        return {"avg_saturation": 0, "avg_brightness": 0, "vibrancy_score": 0, "nightmare_score": 0}
+
+    avg_saturation = np.mean(s_masked)
+    avg_brightness = np.mean(v_masked)
+    vibrancy_score = calculate_vibrancy_score(img)
+    high_saturation_ratio = np.sum(s_masked > 100) / len(s_masked)
+
+    # Nightmare detection scoring (based on analysis of 18 pairs)
+    nightmare_score = 0
+
+    # Primary indicators (1 point each)
+    if avg_saturation > 65.0:
+        nightmare_score += 1
+    if avg_brightness > 190.0:
+        nightmare_score += 1
+    if vibrancy_score > 35.0:
+        nightmare_score += 1
+
+    # Secondary indicators (0.5 points each)
+    if high_saturation_ratio > 0.1:
+        nightmare_score += 0.5
+    if avg_brightness > 170 and avg_saturation > 50:
+        nightmare_score += 0.5
+    if vibrancy_score > 30 and avg_saturation > 45:
+        nightmare_score += 0.5
+
+    return {
+        "avg_saturation": avg_saturation,
+        "avg_brightness": avg_brightness,
+        "vibrancy_score": vibrancy_score,
+        "nightmare_score": nightmare_score
+    }
+
 def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
-    """Compare color histograms between icon and template using HSV"""
+    """Enhanced color comparison focusing on nightmare vs normal detection"""
     from data import ICON_TEMPLATES
-    
+
     if template_name not in ICON_TEMPLATES:
         return 0.0
-    
+
     template_img = ICON_TEMPLATES[template_name]
-    
-    # Convert both to HSV
-    icon_hsv = cv2.cvtColor(icon_img, cv2.COLOR_BGR2HSV)
-    template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
-    
-    # Calculate histograms for Hue and Saturation (ignore Value for lighting invariance)
-    hist_icon = cv2.calcHist([icon_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
-    hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
-    
-    # Normalize histograms
-    hist_icon = cv2.normalize(hist_icon, hist_icon).flatten()
-    hist_template = cv2.normalize(hist_template, hist_template).flatten()
-    
-    # Compare using correlation (1.0 = perfect match, -1.0 = opposite)
-    correlation = cv2.compareHist(hist_icon, hist_template, cv2.HISTCMP_CORREL)
-    
-    return correlation
+
+    # Analyze both images for nightmare indicators
+    icon_analysis = analyze_nightmare_indicators(icon_img)
+    template_analysis = analyze_nightmare_indicators(template_img)
+
+    # Check if this is a nightmare vs normal comparison
+    is_nightmare_template = "Nightmare" in template_name
+
+    # Calculate score similarity based on nightmare score matching
+    score_diff = abs(icon_analysis["nightmare_score"] - template_analysis["nightmare_score"])
+    score_similarity = max(0.0, 1.0 - score_diff / 3.0)  # Normalize by max possible difference
+
+    if is_nightmare_template:
+        # For nightmare templates, icon should also show nightmare characteristics
+        if icon_analysis["nightmare_score"] >= 2.0:
+            score_similarity += 0.3  # Strong bonus for matching nightmare characteristics
+        else:
+            score_similarity *= 0.3  # Strong penalty for normal image vs nightmare template
+
+        # Additional saturation/vibrancy matching for nightmare variants
+        sat_diff = abs(icon_analysis["avg_saturation"] - template_analysis["avg_saturation"]) / 255.0
+        vib_diff = abs(icon_analysis["vibrancy_score"] - template_analysis["vibrancy_score"]) / 100.0
+
+        similarity_score = (score_similarity * 0.7 + (1.0 - sat_diff) * 0.15 + (1.0 - vib_diff) * 0.15)
+
+    else:
+        # For normal templates, icon should NOT show strong nightmare characteristics
+        if icon_analysis["nightmare_score"] < 2.0:
+            score_similarity += 0.3  # Bonus for matching normal characteristics
+        else:
+            score_similarity *= 0.3  # Penalty for nightmare image vs normal template
+
+        # Traditional color histogram comparison for normal variants
+        icon_hsv = cv2.cvtColor(icon_img, cv2.COLOR_BGR2HSV)
+        template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
+
+        hist_icon = cv2.calcHist([icon_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+        hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+
+        hist_icon = cv2.normalize(hist_icon, hist_icon).flatten()
+        hist_template = cv2.normalize(hist_template, hist_template).flatten()
+
+        hist_correlation = cv2.compareHist(hist_icon, hist_template, cv2.HISTCMP_CORREL)
+
+        similarity_score = (score_similarity * 0.5 + hist_correlation * 0.5)
+
+    return max(0.0, min(1.0, similarity_score))
 
 def match_icon(image: np.ndarray) -> Tuple[str, float]:
     """SIFT-based icon matching - returns best match with confidence check"""
