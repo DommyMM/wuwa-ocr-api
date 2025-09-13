@@ -38,15 +38,38 @@ ECHO_REGIONS = {
     "subs_values": {"x1": 290, "y1": 228, "x2": 359, "y2": 400}
 }
 
+
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
-    if name in ["character", "weapon"]:
+    if name == "character":
+        # Parallel hybrid: Tesseract for name accuracy + Rapid for level detection
+        from concurrent.futures import ThreadPoolExecutor
+
+        def run_tesseract():
+            processed_image = preprocess_region(image)
+            return pytesseract.image_to_string(processed_image, config='--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ')
+
+        def run_rapid():
+            result, _ = Rapid(image)
+            return "\n".join(text for _, text, _ in result) if result else ""
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            tess_future = executor.submit(run_tesseract)
+            rapid_future = executor.submit(run_rapid)
+            name_text = tess_future.result()
+            rapid_text = rapid_future.result()
+
+        return f"{name_text.strip()}\n{rapid_text.strip()}"
+    elif name == "weapon":
+        # Keep Rapid OCR for weapons
         result, _ = Rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
         return ""
-    image = preprocess_region(image)
-    return pytesseract.image_to_string(image)
+    else:
+        # Default tesseract with preprocessing for other regions
+        image = preprocess_region(image)
+        return pytesseract.image_to_string(image)
 
 def preprocess_region(image):
     """Lighter preprocessing to preserve text clarity"""
