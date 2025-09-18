@@ -120,7 +120,7 @@ def validate_character_name(raw_name: str) -> str:
     if not CHARACTER_NAMES:
         return raw_name
     match = process.extractOne(raw_name, CHARACTER_NAMES)
-    return match[0] if match and match[1] > 70 else raw_name
+    return match[0] if match else raw_name
 
 def parse_region_text(name, text):
     match name:
