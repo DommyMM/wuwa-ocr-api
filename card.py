@@ -90,7 +90,7 @@ def validate_stat(name: str, valid_names: set) -> str:
     if not valid_names:
         return name
     match = process.extractOne(name, list(valid_names))
-    return match[0] if match and match[1] > 70 else name
+    return match[0] if match else name
 
 def validate_value(value: str, stat_name: str) -> str:
     if not SUB_STATS or stat_name not in SUB_STATS:
@@ -102,7 +102,7 @@ def validate_value(value: str, stat_name: str) -> str:
     try:
         valid_values = [str(v) for v in SUB_STATS[stat_name]]
         match = process.extractOne(clean_value, valid_values)
-        if match and match[1] > 70:
+        if match:
             float_value = float(clean_value)
             matched_value = float(match[0])
             if abs(float_value - matched_value) > 2.0:
@@ -152,7 +152,7 @@ def parse_region_text(name, text):
                 if not WEAPON_NAMES:
                     return raw_name
                 match = process.extractOne(raw_name, WEAPON_NAMES)
-                return match[0] if match and match[1] > 70 else raw_name
+                return match[0] if match else raw_name
             lines = text.split('\n')
             raw_name = lines[0].strip() if lines else "Unknown"
             weapon_name = validate_weapon_name(raw_name)
@@ -254,7 +254,7 @@ def get_echo_cost(image: np.ndarray) -> int:
         # If not found, try fuzzy matching with valid costs
         valid_costs = ['1', '3', '4']
         match = process.extractOne(raw_cost, valid_costs)
-        if match and match[1] > 70: 
+        if match:
             return int(match[0])
     
     return 0
