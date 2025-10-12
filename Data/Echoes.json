@@ -393,7 +393,7 @@
         "name": "Nimbus Wraith",
         "id": "31044",
         "cost": 1,
-        "elements": ["Midnight", "Empyrean"]
+        "elements": ["Midnight", "Empyrean", "Flamewing"]
     },
     {
         "name": "Nocturnus Knight",
@@ -663,7 +663,7 @@
         "name": "Kerasaur",
         "id": "31062",
         "cost": 3,
-        "elements": ["Windward", "Flaming"]
+        "elements": ["Windward", "Flaming", "Flamewing"]
     },
     {
         "name": "Pilgrims Shell",
@@ -717,7 +717,7 @@
         "name": "Corrosaurus",
         "id": "32044",
         "cost": 3,
-        "elements": ["Flaming"]
+        "elements": ["Flaming", "Flamewing"]
     },
     {
         "name": "The False Sovereign",
@@ -766,5 +766,29 @@
         "id": "31068",
         "cost": 1,
         "elements": ["Law"]
+    },
+    {
+        "name": "Nightmare Baby Viridblaze Saurian",
+        "id": "31072",
+        "cost": 1,
+        "elements": ["Flamewing"]
+    },
+    {
+        "name": "Nightmare Baby Roseshroom",
+        "id": "31073",
+        "cost": 1,
+        "elements": ["Flamewing"]
+    },
+    {
+        "name": "Nightmare Viridblaze Saurian",
+        "id": "32047",
+        "cost": 3,
+        "elements": ["Flamewing"]
+    },
+    {
+        "name": "Threnodian - Leviathan",
+        "id": "34020_1",
+        "cost": 4,
+        "elements": ["Flamewing"]
     }
 ]

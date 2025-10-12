@@ -196,6 +196,20 @@
         "ER": 100
     },
     {
+        "name": "Galbrena",
+        "id": "55",
+        "title": "jiabeilina",
+        "weaponType": "Pistol",
+        "element": "Fusion",
+        "Bonus1": "Crit DMG",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 824,
+        "ATK": 37,
+        "DEF": 91,
+        "ER": 100
+    },
+    {
         "name": "Iuno",
         "id": "48",
         "title": "younuo",
@@ -333,6 +347,20 @@
         "HP": 862,
         "ATK": 35,
         "DEF": 93,
+        "ER": 100
+    },
+    {
+        "name": "Qiuyuan",
+        "id": "56",
+        "title": "qiuyuan",
+        "weaponType": "Sword",
+        "element": "Aero",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 979,
+        "ATK": 30,
+        "DEF": 98,
         "ER": 100
     },
     {

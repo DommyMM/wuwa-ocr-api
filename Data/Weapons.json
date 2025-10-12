@@ -209,6 +209,16 @@
     ],
     "Pistols": [
         {
+            "name": "Lux & Umbra",
+            "id": "21030036",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Static Mist",
             "id": "21030015",
             "rarity": "5-star",
@@ -747,6 +757,16 @@
             "base_main": "5.4",
             "passive": "ER",
             "passive_stat": "12.8"
+        },
+        {
+            "name": "Emerald Sentence",
+            "id": "21020066",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
         },
         {
             "name": "Red Spring",
