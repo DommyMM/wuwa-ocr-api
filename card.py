@@ -446,27 +446,41 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
             print(f"[ELEMENT DEBUG] Detected element: {detected_element}")
 
             # Log which candidates match the detected element
+            element_matches = []
             for name, conf in close_matches:
                 possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
-                matches_element = "✓" if detected_element in possible_elements else "✗"
-                print(f"[ELEMENT DEBUG] {matches_element} '{name}' has elements {possible_elements}")
+                matches_element = detected_element in possible_elements
+                match_symbol = "✓" if matches_element else "✗"
+                print(f"[ELEMENT DEBUG] {match_symbol} '{name}' has elements {possible_elements}")
+                if matches_element:
+                    element_matches.append((name, conf))
 
-            icon_img = image[0:182, 0:188]
-            color_scores = []
-            for name, conf in close_matches:
-                color_score = compare_icon_colors(icon_img, name)
-                color_scores.append((name, color_score))
-                print(f"Color match score for '{name}': {color_score:.4f}")
+            # USE ELEMENT AS PRIMARY TIEBREAKER
+            if len(element_matches) == 1:
+                # Element clearly identifies ONE candidate - trust it!
+                best_match = element_matches[0][0]
+                best_conf = element_matches[0][1]
+                print(f"[ELEMENT DEBUG] ✓✓✓ Element-based selection: '{best_match}' (only match for element '{detected_element}')")
+            else:
+                # Element doesn't help (matches multiple or none) - fall back to color
+                print(f"[ELEMENT DEBUG] Element matches {len(element_matches)} candidates, using color matching as fallback")
 
-            # Pick the best color match
-            best_color_match = max(color_scores, key=lambda x: x[1])
-            if best_color_match[0] != best_match:
-                print(f"Color override: {best_match} -> {best_color_match[0]}")
-                best_match = best_color_match[0]
-                for name, conf in sorted_matches:
-                    if name == best_match:
-                        best_conf = conf
-                        break
+                icon_img = image[0:182, 0:188]
+                color_scores = []
+                for name, conf in close_matches:
+                    color_score = compare_icon_colors(icon_img, name)
+                    color_scores.append((name, color_score))
+                    print(f"Color match score for '{name}': {color_score:.4f}")
+
+                # Pick the best color match
+                best_color_match = max(color_scores, key=lambda x: x[1])
+                if best_color_match[0] != best_match:
+                    print(f"Color override: {best_match} -> {best_color_match[0]}")
+                    best_match = best_color_match[0]
+                    for name, conf in sorted_matches:
+                        if name == best_match:
+                            best_conf = conf
+                            break
     
     if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
         actual_cost = get_echo_cost(image)
