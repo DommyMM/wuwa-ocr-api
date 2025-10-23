@@ -412,11 +412,10 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
     
     # Use color comparison when top matches are close (old logic) + minimum confidence filter
-    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.15:
-        # Optimal filter: 15% minimum confidence based on log analysis
-        # Filters out structural mismatches like Dwarf Cassowary (11.71%)
+    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.1:
+        # Lowkey no idea why I chose 10% but 15% was too high so yeah
         close_matches = [(name, conf) for name, conf in sorted_matches
-                        if conf > 0.15]
+                        if conf > 0.1]
 
         # If we have multiple nightmare variants, something's wrong - filter out the weaker nightmare
         nightmare_count = sum(1 for name, conf in close_matches if "Nightmare" in name)
