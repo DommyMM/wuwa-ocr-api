@@ -400,13 +400,15 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     kp1, des1 = sift.detectAndCompute(icon_img, None)
     matches = []
     flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-    
+
+    detected_element = None  # Initialize to avoid duplicate element detection
+
     for name, (kp2, des2) in TEMPLATE_FEATURES.items():
         matches_list = flann.knnMatch(des1, des2, k=2)
         good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
         confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
         matches.append((name, confidence))
-    
+
     sorted_matches = sorted(matches, key=lambda x: x[1], reverse=True)
     best_match, best_conf = sorted_matches[0]
     secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
@@ -426,11 +428,10 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
             close_matches = [m for m in close_matches if "Nightmare" not in m[0] or m == best_nightmare]
 
         if len(close_matches) >= 2:  # Only if there are actually multiple decent close matches
-            # Log close matches with their confidence scores
             close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
             print(f"Close matches detected: {close_scores}")
 
-            # Detect element EARLY - before color matching
+            # Detect element for disambiguation
             element_region = get_element_region(image)
 
             # Get union of all possible elements for candidates
@@ -438,20 +439,14 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
             for name, _ in close_matches:
                 candidate_elements.update(ECHO_ELEMENTS.get(name, []))
 
-            print(f"[ELEMENT DEBUG] Candidate pool elements: {sorted(candidate_elements)}")
-
             # Match against candidate elements only
             detected_element = determine_element(element_region, list(candidate_elements))
-            print(f"[ELEMENT DEBUG] Detected element: {detected_element}")
 
-            # Log which candidates match the detected element
+            # Check which candidates match the detected element
             element_matches = []
             for name, conf in close_matches:
                 possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
-                matches_element = detected_element in possible_elements
-                match_symbol = "✓" if matches_element else "✗"
-                print(f"[ELEMENT DEBUG] {match_symbol} '{name}' has elements {possible_elements}")
-                if matches_element:
+                if detected_element in possible_elements:
                     element_matches.append((name, conf))
 
             # USE ELEMENT AS PRIMARY TIEBREAKER
@@ -459,22 +454,19 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
                 # Element clearly identifies ONE candidate - trust it!
                 best_match = element_matches[0][0]
                 best_conf = element_matches[0][1]
-                print(f"[ELEMENT DEBUG] ✓✓✓ Element-based selection: '{best_match}' (only match for element '{detected_element}')")
+                print(f"→ Matched {detected_element} → '{best_match}'")
             else:
                 # Element doesn't help (matches multiple or none) - fall back to color
-                print(f"[ELEMENT DEBUG] Element matches {len(element_matches)} candidates, using color matching as fallback")
-
                 icon_img = image[0:182, 0:188]
                 color_scores = []
                 for name, conf in close_matches:
                     color_score = compare_icon_colors(icon_img, name)
                     color_scores.append((name, color_score))
-                    print(f"Color match score for '{name}': {color_score:.4f}")
 
                 # Pick the best color match
                 best_color_match = max(color_scores, key=lambda x: x[1])
                 if best_color_match[0] != best_match:
-                    print(f"Color override: {best_match} -> {best_color_match[0]}")
+                    print(f"→ Color-based: {best_match} -> {best_color_match[0]}")
                     best_match = best_color_match[0]
                     for name, conf in sorted_matches:
                         if name == best_match:
@@ -487,7 +479,6 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
         if actual_cost in [1, 3, 4]:
             best_cost = ECHO_COSTS.get(best_match, 0)
             if best_cost != actual_cost:
-                print(f"Best match '{best_match}' has cost {best_cost}, looking for cost {actual_cost} match")
                 for name, conf in secondary_matches:
                     if ECHO_COSTS.get(name, 0) == actual_cost:
                         print(f"Cost-based selection: {name} (matches cost {actual_cost})")
@@ -495,11 +486,12 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
                         best_conf = conf
                         break
 
-    # Detect element after echo is determined
-    element_region = get_element_region(image)
-    element_data = determine_element(element_region, best_match)
+    # Only detect element if we haven't already
+    if detected_element is None:
+        element_region = get_element_region(image)
+        detected_element = determine_element(element_region, best_match)
 
-    return (best_match, best_conf, element_data)
+    return (best_match, best_conf, detected_element)
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
