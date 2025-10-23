@@ -214,19 +214,32 @@ def get_element_region(image):
     
     return image[y1:y2, x1:x2]
 
-def determine_element(image, echo_name: str):
-    """Match element using SIFT features, filtered by possible elements"""
-    base_name = echo_name.replace("Phantom ", "") if echo_name.startswith("Phantom ") else echo_name
-    
-    possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
-    
+def determine_element(image, filter_elements):
+    """Match element using SIFT features
+
+    Args:
+        image: Element icon region
+        filter_elements: Either a string (echo_name) or list of element names to check against
+
+    Returns:
+        Best matching element name
+    """
+    # Handle both string (echo_name) and list (candidate elements) inputs
+    if isinstance(filter_elements, str):
+        # Legacy behavior: filter by echo name
+        base_name = filter_elements.replace("Phantom ", "") if filter_elements.startswith("Phantom ") else filter_elements
+        possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
+    else:
+        # New behavior: use provided element list
+        possible_elements = filter_elements if filter_elements else ["Unknown"]
+
     sift = SIFT_create()
     flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-    
+
     kp1, des1 = sift.detectAndCompute(image, None)
     if des1 is None:
         return "Unknown"
-    
+
     matches = []
     for name, (kp2, des2) in ELEMENT_FEATURES.items():
         if name in possible_elements:
@@ -376,8 +389,12 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
 
     return max(0.0, min(1.0, similarity_score))
 
-def match_icon(image: np.ndarray) -> Tuple[str, float]:
-    """SIFT-based icon matching - returns best match with confidence check"""
+def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
+    """SIFT-based icon matching - returns best match with confidence check and element
+
+    Returns:
+        Tuple of (echo_name, confidence, element)
+    """
     icon_img = image[0:182, 0:188]
     sift = SIFT_create()
     kp1, des1 = sift.detectAndCompute(icon_img, None)
@@ -414,6 +431,26 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
             close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
             print(f"Close matches detected: {close_scores}")
 
+            # Detect element EARLY - before color matching
+            element_region = get_element_region(image)
+
+            # Get union of all possible elements for candidates
+            candidate_elements = set()
+            for name, _ in close_matches:
+                candidate_elements.update(ECHO_ELEMENTS.get(name, []))
+
+            print(f"[ELEMENT DEBUG] Candidate pool elements: {sorted(candidate_elements)}")
+
+            # Match against candidate elements only
+            detected_element = determine_element(element_region, list(candidate_elements))
+            print(f"[ELEMENT DEBUG] Detected element: {detected_element}")
+
+            # Log which candidates match the detected element
+            for name, conf in close_matches:
+                possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
+                matches_element = "✓" if detected_element in possible_elements else "✗"
+                print(f"[ELEMENT DEBUG] {matches_element} '{name}' has elements {possible_elements}")
+
             icon_img = image[0:182, 0:188]
             color_scores = []
             for name, conf in close_matches:
@@ -441,8 +478,15 @@ def match_icon(image: np.ndarray) -> Tuple[str, float]:
                 for name, conf in secondary_matches:
                     if ECHO_COSTS.get(name, 0) == actual_cost:
                         print(f"Cost-based selection: {name} (matches cost {actual_cost})")
-                        return (name, conf)
-    return (best_match, best_conf)
+                        best_match = name
+                        best_conf = conf
+                        break
+
+    # Detect element after echo is determined
+    element_region = get_element_region(image)
+    element_data = determine_element(element_region, best_match)
+
+    return (best_match, best_conf, element_data)
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
@@ -563,12 +607,10 @@ def process_card(image, region: str):
             values = values_lines[:5]
             subs_text = "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
             cleaned_text = f"{main_text}\n{subs_text}"
-            
-            name, confidence = match_icon(image)
+
+            name, confidence, element_data = match_icon(image)
             print(f"Echo identified: {name} (confidence: {confidence:.2%})")
             echo_data = parse_region_text(region, cleaned_text)
-            element_region = get_element_region(image)
-            element_data = determine_element(element_region, name)
             print(f"Echo '{name}' -> Element: {element_data}")
             
             # Restore stdout and flush all buffered logs at once
