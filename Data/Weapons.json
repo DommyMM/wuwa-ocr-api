@@ -379,6 +379,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Kumokiri",
+            "id": "21010056",
+            "rarity": "5-star",
+            "ATK": "40",
+            "main_stat": "Crit Rate",
+            "base_main": "8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Thunderflare Dominion",
             "id": "21010046",
             "rarity": "5-star",

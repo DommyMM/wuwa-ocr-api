@@ -56,6 +56,20 @@
         "ER": 100
     },
     {
+        "name": "Buling",
+        "id": "58",
+        "title": "buling",
+        "weaponType": "Rectifier",
+        "element": "Electro",
+        "Bonus1": "Healing",
+        "Bonus2": "ATK",
+        "Role": "Support",
+        "HP": 850,
+        "ATK": 18,
+        "DEF": 103,
+        "ER": 100
+    },
+    {
         "name": "Calcharo",
         "id": "18",
         "title": "kakaluo",
@@ -151,6 +165,20 @@
         "HP": 727,
         "ATK": 24,
         "DEF": 78,
+        "ER": 100
+    },
+    {
+        "name": "Chisa",
+        "id": "57",
+        "title": "qianxiao",
+        "weaponType": "Broadblade",
+        "element": "Havoc",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Support",
+        "HP": 862,
+        "ATK": 35,
+        "DEF": 93,
         "ER": 100
     },
     {
