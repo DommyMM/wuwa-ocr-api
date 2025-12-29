@@ -3,810 +3,1359 @@
         "name": "Abyssal Gladius",
         "id": "32026",
         "cost": 3,
-        "elements": ["Midnight", "Tidebreaking", "Thread"]
+        "elements": [
+            "Midnight",
+            "Tidebreaking",
+            "Thread"
+        ]
     },
     {
         "name": "Abyssal Mercator",
         "id": "32027",
         "cost": 3,
-        "elements": ["Frosty", "Radiance"]
+        "elements": [
+            "Frosty",
+            "Radiance"
+        ]
     },
     {
         "name": "Abyssal Patricius",
         "id": "32025",
         "cost": 3,
-        "elements": ["Frosty", "Empyrean"]
+        "elements": [
+            "Frosty",
+            "Empyrean"
+        ]
     },
     {
         "name": "Aero Drake",
         "id": "31055",
         "cost": 1,
-        "elements": ["Tidebreaking", "Gust", "Flaming"]
+        "elements": [
+            "Tidebreaking",
+            "Gust",
+            "Flaming"
+        ]
     },
     {
         "name": "Aero Predator",
         "id": "235",
         "cost": 1,
-        "elements": ["Aero", "Electro"]
+        "elements": [
+            "Aero",
+            "Electro"
+        ]
     },
     {
         "name": "Aero Prism",
         "id": "31051",
         "cost": 1,
-        "elements": ["Radiance", "Tidebreaking"]
+        "elements": [
+            "Radiance",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Autopuppet Scout",
         "id": "1003",
         "cost": 3,
-        "elements": ["Spectro", "Glacio"]
+        "elements": [
+            "Spectro",
+            "Glacio"
+        ]
     },
     {
         "name": "Baby Viridblaze Saurian",
         "id": "285",
         "cost": 1,
-        "elements": ["Electro", "Attack", "Fusion"]
+        "elements": [
+            "Electro",
+            "Attack",
+            "Fusion"
+        ]
     },
     {
         "name": "Bell-Borne Geochelone",
         "id": "992",
         "cost": 4,
-        "elements": ["ER", "Healing"]
+        "elements": [
+            "ER",
+            "Healing"
+        ]
     },
     {
         "name": "Calcified Junrock",
         "id": "31050",
         "cost": 1,
-        "elements": ["Empyrean", "Tidebreaking", "Crown"]
+        "elements": [
+            "Empyrean",
+            "Tidebreaking",
+            "Crown"
+        ]
     },
     {
         "name": "Capitaneus",
         "id": "32033",
         "cost": 3,
-        "elements": ["Radiance", "Gust", "Windward"]
+        "elements": [
+            "Radiance",
+            "Gust",
+            "Windward"
+        ]
     },
     {
         "name": "Carapace",
         "id": "970",
         "cost": 3,
-        "elements": ["Aero", "ER"]
+        "elements": [
+            "Aero",
+            "ER"
+        ]
     },
     {
         "name": "Chasm Guardian",
         "id": "215",
         "cost": 3,
-        "elements": ["Healing", "Attack"]
+        "elements": [
+            "Healing",
+            "Attack"
+        ]
     },
     {
         "name": "Chest Mimic",
         "id": "31048",
         "cost": 1,
-        "elements": ["Frosty", "Midnight", "Empyrean"]
+        "elements": [
+            "Frosty",
+            "Midnight",
+            "Empyrean"
+        ]
     },
     {
         "name": "Chirpuff",
         "id": "971",
         "cost": 1,
-        "elements": ["Aero", "Havoc"]
+        "elements": [
+            "Aero",
+            "Havoc"
+        ]
     },
     {
         "name": "Chop Chop",
         "id": "32028",
         "cost": 3,
-        "elements": ["Empyrean", "Tidebreaking", "Dream"]
+        "elements": [
+            "Empyrean",
+            "Tidebreaking",
+            "Dream"
+        ]
     },
     {
         "name": "Chop Chop Headless",
         "id": "31040",
         "cost": 1,
-        "elements": ["Radiance", "Tidebreaking"]
+        "elements": [
+            "Radiance",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Chop Chop Leftless",
         "id": "31041",
         "cost": 1,
-        "elements": ["Frosty", "Tidebreaking"]
+        "elements": [
+            "Frosty",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Chop Chop Rightless",
         "id": "31042",
         "cost": 1,
-        "elements": ["Frosty", "Tidebreaking"]
+        "elements": [
+            "Frosty",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Clang Bang",
         "id": "1001",
         "cost": 1,
-        "elements": ["Spectro", "Glacio"]
+        "elements": [
+            "Spectro",
+            "Glacio"
+        ]
     },
     {
         "name": "Corrosaurus",
         "id": "32044",
         "cost": 3,
-        "elements": ["Flaming", "Flamewing"]
+        "elements": [
+            "Flaming",
+            "Flamewing"
+        ]
     },
     {
         "name": "Crownless",
         "id": "999",
         "cost": 4,
-        "elements": ["Havoc"]
+        "elements": [
+            "Havoc"
+        ]
     },
     {
         "name": "Cruisewing",
         "id": "255",
         "cost": 1,
-        "elements": ["Spectro", "ER", "Healing"]
+        "elements": [
+            "Spectro",
+            "ER",
+            "Healing"
+        ]
     },
     {
         "name": "Cuddle Wuddle",
         "id": "32030",
         "cost": 3,
-        "elements": ["Fusion", "Electro", "Frosty", "Midnight"]
+        "elements": [
+            "Fusion",
+            "Electro",
+            "Frosty",
+            "Midnight"
+        ]
     },
     {
         "name": "Cyan-Feathered Heron",
         "id": "135",
         "cost": 3,
-        "elements": ["Aero", "Spectro"]
+        "elements": [
+            "Aero",
+            "Spectro"
+        ]
     },
     {
         "name": "Devotees Flesh",
         "id": "31061",
         "cost": 1,
-        "elements": ["Windward", "Flaming", "Gust"]
+        "elements": [
+            "Windward",
+            "Flaming",
+            "Gust"
+        ]
     },
     {
         "name": "Diamondclaw",
         "id": "987",
         "cost": 1,
-        "elements": ["ER", "Attack"]
+        "elements": [
+            "ER",
+            "Attack"
+        ]
     },
     {
         "name": "Diggy Duggy",
         "id": "31047",
         "cost": 1,
-        "elements": ["Radiance", "Tidebreaking"]
+        "elements": [
+            "Radiance",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Diurnus Knight",
         "id": "32023",
         "cost": 3,
-        "elements": ["Radiance", "Tidebreaking"]
+        "elements": [
+            "Radiance",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Dragon of Dirge",
         "id": "33013",
         "cost": 4,
-        "elements": ["Tidebreaking"]
+        "elements": [
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Dreamless",
         "id": "998",
         "cost": 4,
-        "elements": ["Havoc"]
+        "elements": [
+            "Havoc"
+        ]
     },
     {
         "name": "Dwarf Cassowary",
         "id": "330",
         "cost": 1,
-        "elements": ["Aero", "Healing"]
+        "elements": [
+            "Aero",
+            "Healing"
+        ]
     },
     {
         "name": "Electro Drake",
         "id": "31056",
         "cost": 1,
-        "elements": ["Midnight", "Gust", "Flaming"]
+        "elements": [
+            "Midnight",
+            "Gust",
+            "Flaming"
+        ]
     },
     {
         "name": "Electro Predator",
         "id": "035",
         "cost": 1,
-        "elements": ["Electro", "Fusion"]
+        "elements": [
+            "Electro",
+            "Fusion"
+        ]
     },
     {
         "name": "Excarat",
         "id": "275",
         "cost": 1,
-        "elements": ["Glacio", "Havoc"]
+        "elements": [
+            "Glacio",
+            "Havoc"
+        ]
     },
     {
         "name": "Fae Ignis",
         "id": "31043",
         "cost": 1,
-        "elements": ["Radiance", "Midnight", "Dream"]
+        "elements": [
+            "Radiance",
+            "Midnight",
+            "Dream"
+        ]
     },
     {
         "name": "Fallacy of No Return",
         "id": "350",
         "cost": 4,
-        "elements": ["Healing"]
+        "elements": [
+            "Healing"
+        ]
     },
     {
         "name": "Feilian Beringal",
         "id": "996",
         "cost": 4,
-        "elements": ["Aero"]
+        "elements": [
+            "Aero"
+        ]
     },
     {
         "name": "Fenrico",
         "id": "34015_2",
         "cost": 4,
-        "elements": ["Dream", "Law"]
+        "elements": [
+            "Dream",
+            "Law"
+        ]
     },
     {
         "name": "Fission Junrock",
         "id": "025",
         "cost": 1,
-        "elements": ["Electro", "ER", "Healing"]
+        "elements": [
+            "Electro",
+            "ER",
+            "Healing"
+        ]
     },
     {
         "name": "Flautist",
         "id": "195",
         "cost": 3,
-        "elements": ["Electro", "Attack"]
+        "elements": [
+            "Electro",
+            "Attack"
+        ]
+    },
+    {
+        "name": "Flora Drone",
+        "id": "31077",
+        "cost": 1,
+        "elements": [
+            "Pact",
+            "Rite"
+        ]
+    },
+    {
+        "name": "Flora Reindeer",
+        "id": "32051",
+        "cost": 3,
+        "elements": [
+            "Rite"
+        ]
     },
     {
         "name": "Fleurdelys",
         "id": "34012_1",
         "cost": 4,
-        "elements": ["Gust", "Windward"]
+        "elements": [
+            "Gust",
+            "Windward"
+        ]
+    },
+    {
+        "name": "Frostbite Coleoid",
+        "id": "32057",
+        "cost": 3,
+        "elements": [
+            "Halo"
+        ]
     },
     {
         "name": "Frostscourge Stalker",
         "id": "31039",
         "cost": 1,
-        "elements": ["Radiance", "Midnight"]
+        "elements": [
+            "Radiance",
+            "Midnight"
+        ]
     },
     {
         "name": "Fusion Drake",
         "id": "31058",
         "cost": 1,
-        "elements": ["Windward", "Flaming"]
+        "elements": [
+            "Windward",
+            "Flaming"
+        ]
     },
     {
         "name": "Fusion Dreadmane",
         "id": "980",
         "cost": 1,
-        "elements": ["Healing", "Fusion"]
+        "elements": [
+            "Healing",
+            "Fusion"
+        ]
     },
     {
         "name": "Fusion Prism",
         "id": "155",
         "cost": 1,
-        "elements": ["Glacio", "Attack", "Fusion"]
+        "elements": [
+            "Glacio",
+            "Attack",
+            "Fusion"
+        ]
     },
     {
         "name": "Fusion Warrior",
         "id": "045",
         "cost": 1,
-        "elements": ["Aero", "Electro", "Fusion"]
+        "elements": [
+            "Aero",
+            "Electro",
+            "Fusion"
+        ]
     },
     {
         "name": "Galescourge Stalker",
         "id": "31037",
         "cost": 1,
-        "elements": ["Frosty", "Empyrean"]
+        "elements": [
+            "Frosty",
+            "Empyrean"
+        ]
+    },
+    {
+        "name": "Geospider S4",
+        "id": "31079",
+        "cost": 1,
+        "elements": [
+            "Pact",
+            "Halo"
+        ]
     },
     {
         "name": "Glacio Drake",
         "id": "31057",
         "cost": 1,
-        "elements": ["Gust", "Windward"]
+        "elements": [
+            "Gust",
+            "Windward"
+        ]
     },
     {
         "name": "Glacio Dreadmane",
         "id": "985",
         "cost": 3,
-        "elements": ["Glacio", "ER"]
+        "elements": [
+            "Glacio",
+            "ER"
+        ]
     },
     {
         "name": "Glacio Predator",
         "id": "105",
         "cost": 1,
-        "elements": ["Spectro", "Glacio"]
+        "elements": [
+            "Spectro",
+            "Glacio"
+        ]
     },
     {
         "name": "Glacio Prism",
         "id": "145",
         "cost": 1,
-        "elements": ["Glacio", "ER", "Havoc"]
+        "elements": [
+            "Glacio",
+            "ER",
+            "Havoc"
+        ]
     },
     {
         "name": "Golden Junrock",
         "id": "31049",
         "cost": 1,
-        "elements": ["Frosty", "Radiance", "Law"]
+        "elements": [
+            "Frosty",
+            "Radiance",
+            "Law"
+        ]
     },
     {
         "name": "Gulpuff",
         "id": "115",
         "cost": 1,
-        "elements": ["Spectro", "Glacio"]
+        "elements": [
+            "Spectro",
+            "Glacio"
+        ]
     },
     {
         "name": "Havoc Drake",
         "id": "31060",
         "cost": 1,
-        "elements": ["Windward", "Flaming", "Thread"]
+        "elements": [
+            "Windward",
+            "Flaming",
+            "Thread"
+        ]
     },
     {
         "name": "Havoc Dreadmane",
         "id": "984",
         "cost": 3,
-        "elements": ["Havoc", "Fusion"]
+        "elements": [
+            "Havoc",
+            "Fusion"
+        ]
     },
     {
         "name": "Havoc Prism",
         "id": "175",
         "cost": 1,
-        "elements": ["Electro", "Spectro", "Havoc"]
+        "elements": [
+            "Electro",
+            "Spectro",
+            "Havoc"
+        ]
     },
     {
         "name": "Havoc Warrior",
         "id": "055",
         "cost": 1,
-        "elements": ["Spectro", "Havoc"]
+        "elements": [
+            "Spectro",
+            "Havoc"
+        ]
     },
     {
         "name": "Hecate",
         "id": "34010_1",
         "cost": 4,
-        "elements": ["Empyrean", "Aero", "Electro", "Fusion", "Glacio", "Spectro", "Havoc"]
+        "elements": [
+            "Empyrean",
+            "Aero",
+            "Electro",
+            "Fusion",
+            "Glacio",
+            "Spectro",
+            "Havoc"
+        ]
     },
     {
         "name": "Hoartoise",
         "id": "969",
         "cost": 1,
-        "elements": ["Spectro", "Glacio"]
+        "elements": [
+            "Spectro",
+            "Glacio"
+        ]
     },
     {
         "name": "Hocus Pocus",
         "id": "31045",
         "cost": 1,
-        "elements": ["Frosty", "Empyrean"]
+        "elements": [
+            "Frosty",
+            "Empyrean"
+        ]
     },
     {
         "name": "Hoochief",
         "id": "989",
         "cost": 3,
-        "elements": ["Aero", "Healing"]
+        "elements": [
+            "Aero",
+            "Healing"
+        ]
     },
     {
         "name": "Hooscamp",
         "id": "988",
         "cost": 1,
-        "elements": ["Aero", "Attack"]
+        "elements": [
+            "Aero",
+            "Attack"
+        ]
     },
     {
         "name": "Hurriclaw",
         "id": "32032",
         "cost": 3,
-        "elements": ["Tidebreaking", "Gust", "Crown"]
+        "elements": [
+            "Tidebreaking",
+            "Gust",
+            "Crown"
+        ]
+    },
+    {
+        "name": "Hyvatia",
+        "id": "34021",
+        "cost": 4,
+        "elements": [
+            "Rite",
+            "Pact"
+        ]
     },
     {
         "name": "Impermanence Heron",
         "id": "995",
         "cost": 4,
-        "elements": ["ER"]
+        "elements": [
+            "ER"
+        ]
     },
     {
         "name": "Inferno Rider",
         "id": "325",
         "cost": 4,
-        "elements": ["Fusion"]
+        "elements": [
+            "Fusion"
+        ]
+    },
+    {
+        "name": "Ironhoof",
+        "id": "32053",
+        "cost": 3,
+        "elements": [
+            "Pact"
+        ]
     },
     {
         "name": "Jue",
         "id": "327",
         "cost": 4,
-        "elements": ["Spectro"]
+        "elements": [
+            "Spectro"
+        ]
     },
     {
         "name": "Kerasaur",
         "id": "31062",
         "cost": 3,
-        "elements": ["Windward", "Flaming", "Flamewing"]
+        "elements": [
+            "Windward",
+            "Flaming",
+            "Flamewing"
+        ]
     },
     {
         "name": "La Guardia",
         "id": "31052",
         "cost": 1,
-        "elements": ["Midnight", "Gust", "Flaming"]
+        "elements": [
+            "Midnight",
+            "Gust",
+            "Flaming"
+        ]
     },
     {
         "name": "Lady of the Sea",
         "id": "34018",
         "cost": 4,
-        "elements": ["Crown"]
+        "elements": [
+            "Crown"
+        ]
     },
     {
         "name": "Lampylumen Myriad",
         "id": "994",
         "cost": 4,
-        "elements": ["Glacio"]
+        "elements": [
+            "Glacio"
+        ]
     },
     {
         "name": "Lava Larva",
         "id": "326",
         "cost": 1,
-        "elements": ["Attack", "Fusion"]
+        "elements": [
+            "Attack",
+            "Fusion"
+        ]
     },
     {
         "name": "Lightcrusher",
         "id": "328",
         "cost": 3,
-        "elements": ["Spectro"]
+        "elements": [
+            "Spectro"
+        ]
     },
     {
         "name": "Lioness of Glory",
         "id": "33022",
         "cost": 4,
-        "elements": ["Flaming"]
+        "elements": [
+            "Flaming"
+        ]
     },
     {
         "name": "Lorelei",
         "id": "33011",
         "cost": 4,
-        "elements": ["Midnight"]
+        "elements": [
+            "Midnight"
+        ]
     },
     {
         "name": "Lottie Lost",
         "id": "31046",
         "cost": 1,
-        "elements": ["Spectro", "ER", "Attack", "Frosty", "Tidebreaking"]
+        "elements": [
+            "Spectro",
+            "ER",
+            "Attack",
+            "Frosty",
+            "Tidebreaking"
+        ]
     },
     {
         "name": "Lumiscale Construct",
         "id": "329",
         "cost": 3,
-        "elements": ["Electro", "Glacio"]
+        "elements": [
+            "Electro",
+            "Glacio"
+        ]
+    },
+    {
+        "name": "Mining Drone",
+        "id": "31078",
+        "cost": 1,
+        "elements": [
+            "Halo",
+            "Pact"
+        ]
+    },
+    {
+        "name": "Mining Reindeer",
+        "id": "32052",
+        "cost": 3,
+        "elements": [
+            "Pact"
+        ]
     },
     {
         "name": "Mech Abomination",
         "id": "993",
         "cost": 4,
-        "elements": ["Attack"]
+        "elements": [
+            "Attack"
+        ]
     },
     {
         "name": "Mourning Aix",
         "id": "997",
         "cost": 4,
-        "elements": ["Spectro"]
+        "elements": [
+            "Spectro"
+        ]
     },
     {
         "name": "Nightmare Aero Predator",
         "id": "31066",
         "cost": 1,
-        "elements": ["Crown"]
+        "elements": [
+            "Crown"
+        ]
     },
     {
         "name": "Nightmare Baby Roseshroom",
         "id": "31073",
         "cost": 1,
-        "elements": ["Flamewing"]
+        "elements": [
+            "Flamewing"
+        ]
     },
     {
         "name": "Nightmare Baby Viridblaze Saurian",
         "id": "31072",
         "cost": 1,
-        "elements": ["Flamewing"]
+        "elements": [
+            "Flamewing"
+        ]
     },
     {
         "name": "Nightmare Chirpuff",
         "id": "31068",
         "cost": 1,
-        "elements": ["Law"]
+        "elements": [
+            "Law"
+        ]
     },
     {
         "name": "Nightmare Crownless",
         "id": "YZ_33018",
         "cost": 4,
-        "elements": ["Havoc"]
+        "elements": [
+            "Havoc"
+        ]
     },
     {
         "name": "Nightmare Cyan-Feathered Heron",
         "id": "32046",
         "cost": 3,
-        "elements": ["Law"]
+        "elements": [
+            "Law"
+        ]
     },
     {
         "name": "Nightmare Dwarf Cassowary",
         "id": "31076",
         "cost": 1,
-        "elements": ["Thread"]
+        "elements": [
+            "Thread"
+        ]
     },
     {
         "name": "Nightmare Electro Predator",
         "id": "31065",
         "cost": 1,
-        "elements": ["Crown"]
+        "elements": [
+            "Crown"
+        ]
     },
     {
         "name": "Nightmare Feilian Beringal",
         "id": "YZ_33014",
         "cost": 4,
-        "elements": ["Aero"]
+        "elements": [
+            "Aero"
+        ]
     },
     {
         "name": "Nightmare Glacio Predator",
         "id": "31064",
         "cost": 1,
-        "elements": ["Dream"]
+        "elements": [
+            "Dream"
+        ]
     },
     {
         "name": "Nightmare Gulpuff",
         "id": "31067",
         "cost": 1,
-        "elements": ["Law"]
+        "elements": [
+            "Law"
+        ]
     },
     {
         "name": "Nightmare Havoc Warrior",
         "id": "31063",
         "cost": 1,
-        "elements": ["Dream"]
+        "elements": [
+            "Dream"
+        ]
     },
     {
         "name": "Nightmare Hecate",
         "id": "34016",
         "cost": 4,
-        "elements": ["Dream"]
+        "elements": [
+            "Dream"
+        ]
     },
     {
         "name": "Nightmare Impermanence Heron",
         "id": "YZ_33015",
         "cost": 4,
-        "elements": ["Midnight"]
+        "elements": [
+            "Midnight"
+        ]
     },
     {
         "name": "Nightmare Inferno Rider",
         "id": "YZ_33019",
         "cost": 4,
-        "elements": ["Fusion"]
+        "elements": [
+            "Fusion"
+        ]
     },
     {
         "name": "Nightmare Kelpie",
         "id": "33021",
         "cost": 4,
-        "elements": ["Gust", "Windward"]
+        "elements": [
+            "Gust",
+            "Windward"
+        ]
     },
     {
         "name": "Nightmare Lampylumen Myriad",
         "id": "34013",
         "cost": 4,
-        "elements": ["Frosty", "Empyrean"]
+        "elements": [
+            "Frosty",
+            "Empyrean"
+        ]
     },
     {
         "name": "Nightmare Mourning Aix",
         "id": "YZ_33020",
         "cost": 4,
-        "elements": ["Radiance"]
+        "elements": [
+            "Radiance"
+        ]
     },
     {
         "name": "Nightmare Roseshroom",
         "id": "32048",
         "cost": 3,
-        "elements": ["Thread"]
+        "elements": [
+            "Thread"
+        ]
     },
     {
         "name": "Nightmare Tambourinist",
         "id": "32043",
         "cost": 3,
-        "elements": ["Dream"]
+        "elements": [
+            "Dream"
+        ]
     },
     {
         "name": "Nightmare Tempest Mephis",
         "id": "YZ_33016",
         "cost": 4,
-        "elements": ["Electro", "Empyrean"]
+        "elements": [
+            "Electro",
+            "Empyrean"
+        ]
     },
     {
         "name": "Nightmare Thundering Mephis",
         "id": "YZ_33017",
         "cost": 4,
-        "elements": ["Electro"]
+        "elements": [
+            "Electro"
+        ]
     },
     {
         "name": "Nightmare Tick Tack",
         "id": "31075",
         "cost": 1,
-        "elements": ["Thread"]
+        "elements": [
+            "Thread"
+        ]
     },
     {
         "name": "Nightmare Violet-Feathered Heron",
         "id": "32045",
         "cost": 3,
-        "elements": ["Crown"]
+        "elements": [
+            "Crown"
+        ]
     },
     {
         "name": "Nightmare Viridblaze Saurian",
         "id": "32047",
         "cost": 3,
-        "elements": ["Flamewing"]
+        "elements": [
+            "Flamewing"
+        ]
     },
     {
         "name": "Nimbus Wraith",
         "id": "31044",
         "cost": 1,
-        "elements": ["Midnight", "Empyrean", "Flamewing"]
+        "elements": [
+            "Midnight",
+            "Empyrean",
+            "Flamewing"
+        ]
     },
     {
         "name": "Nocturnus Knight",
         "id": "32024",
         "cost": 3,
-        "elements": ["Midnight", "Empyrean"]
+        "elements": [
+            "Midnight",
+            "Empyrean"
+        ]
     },
     {
         "name": "Pilgrims Shell",
         "id": "32034",
         "cost": 3,
-        "elements": ["Windward", "Flaming"]
+        "elements": [
+            "Windward",
+            "Flaming"
+        ]
     },
     {
         "name": "Questless Knight",
         "id": "32022",
         "cost": 3,
-        "elements": ["Frosty", "Midnight"]
+        "elements": [
+            "Frosty",
+            "Midnight"
+        ]
+    },
+    {
+        "name": "Reactor Husk",
+        "id": "34022",
+        "cost": 4,
+        "elements": [
+            "Halo"
+        ]
     },
     {
         "name": "Rage Against the Statue",
         "id": "32031",
         "cost": 3,
-        "elements": ["Radiance", "Gust", "Law"]
+        "elements": [
+            "Radiance",
+            "Gust",
+            "Law"
+        ]
     },
     {
         "name": "Rocksteady Guardian",
         "id": "245",
         "cost": 3,
-        "elements": ["Spectro", "Healing"]
+        "elements": [
+            "Spectro",
+            "Healing"
+        ]
     },
     {
         "name": "Roseshroom",
         "id": "315",
         "cost": 3,
-        "elements": ["Glacio", "Havoc"]
+        "elements": [
+            "Glacio",
+            "Havoc"
+        ]
     },
     {
         "name": "Sabyr Boar",
         "id": "265",
         "cost": 1,
-        "elements": ["Aero", "Glacio", "ER"]
+        "elements": [
+            "Aero",
+            "Glacio",
+            "ER"
+        ]
+    },
+    {
+        "name": "Sabercat Prowler",
+        "id": "32056",
+        "cost": 3,
+        "elements": [
+            "Pact",
+            "Halo"
+        ]
+    },
+    {
+        "name": "Sabercat Reaver",
+        "id": "32055",
+        "cost": 3,
+        "elements": [
+            "Pact",
+            "Halo"
+        ]
     },
     {
         "name": "Sacerdos",
         "id": "31054",
         "cost": 1,
-        "elements": ["Gust", "Windward"]
+        "elements": [
+            "Gust",
+            "Windward"
+        ]
     },
     {
         "name": "Sagittario",
         "id": "31053",
         "cost": 1,
-        "elements": ["Radiance", "Gust", "Flaming"]
+        "elements": [
+            "Radiance",
+            "Gust",
+            "Flaming"
+        ]
     },
     {
         "name": "Sentry Construct",
         "id": "33012",
         "cost": 4,
-        "elements": ["Frosty"]
+        "elements": [
+            "Frosty"
+        ]
+    },
+    {
+        "name": "Spacetrek Explorer",
+        "id": "32054",
+        "cost": 3,
+        "elements": [
+            "Halo"
+        ]
     },
     {
         "name": "Snip Snap",
         "id": "065",
         "cost": 1,
-        "elements": ["Healing", "Attack", "Fusion"]
+        "elements": [
+            "Healing",
+            "Attack",
+            "Fusion"
+        ]
     },
     {
         "name": "Spearback",
         "id": "986",
         "cost": 3,
-        "elements": ["ER", "Attack"]
+        "elements": [
+            "ER",
+            "Attack"
+        ]
     },
     {
         "name": "Spectro Drake",
         "id": "31059",
         "cost": 1,
-        "elements": ["Windward", "Flaming"]
+        "elements": [
+            "Windward",
+            "Flaming"
+        ]
     },
     {
         "name": "Spectro Prism",
         "id": "165",
         "cost": 1,
-        "elements": ["Electro", "Spectro", "Fusion"]
+        "elements": [
+            "Electro",
+            "Spectro",
+            "Fusion"
+        ]
     },
     {
         "name": "Stonewall Bracer",
         "id": "185",
         "cost": 3,
-        "elements": ["ER", "Healing"]
+        "elements": [
+            "ER",
+            "Healing"
+        ]
     },
     {
         "name": "Tambourinist",
         "id": "205",
         "cost": 3,
-        "elements": ["Glacio", "Havoc"]
+        "elements": [
+            "Glacio",
+            "Havoc"
+        ]
     },
     {
         "name": "Tempest Mephis",
         "id": "225",
         "cost": 4,
-        "elements": ["Electro"]
+        "elements": [
+            "Electro"
+        ]
     },
     {
         "name": "The False Sovereign",
         "id": "34017",
         "cost": 4,
-        "elements": ["Crown"]
+        "elements": [
+            "Crown"
+        ]
     },
     {
         "name": "Threnodian - Leviathan",
         "id": "34020_1",
         "cost": 4,
-        "elements": ["Flamewing", "Thread"]
+        "elements": [
+            "Flamewing",
+            "Thread"
+        ]
+    },
+    {
+        "name": "Tremor Warrior",
+        "id": "31074",
+        "cost": 1,
+        "elements": [
+            "Halo"
+        ]
+    },
+    {
+        "name": "Twin Nova Collapsar Blade",
+        "id": "32050",
+        "cost": 3,
+        "elements": [
+            "Rite"
+        ]
+    },
+    {
+        "name": "Twin Nova Nebulous Cannon",
+        "id": "32049",
+        "cost": 3,
+        "elements": [
+            "Rite"
+        ]
     },
     {
         "name": "Thundering Mephis",
         "id": "226",
         "cost": 4,
-        "elements": ["Electro"]
+        "elements": [
+            "Electro"
+        ]
     },
     {
         "name": "Tick Tack",
         "id": "095",
         "cost": 1,
-        "elements": ["Healing", "Attack", "Havoc"]
+        "elements": [
+            "Healing",
+            "Attack",
+            "Havoc"
+        ]
     },
     {
         "name": "Traffic Illuminator",
         "id": "1000",
         "cost": 1,
-        "elements": ["Aero", "Electro", "Fusion"]
+        "elements": [
+            "Aero",
+            "Electro",
+            "Fusion"
+        ]
     },
     {
         "name": "Vanguard Junrock",
         "id": "015",
         "cost": 1,
-        "elements": ["Electro", "Healing", "Attack"]
+        "elements": [
+            "Electro",
+            "Healing",
+            "Attack"
+        ]
     },
     {
         "name": "Violet-Feathered Heron",
         "id": "125",
         "cost": 3,
-        "elements": ["Electro", "Fusion"]
+        "elements": [
+            "Electro",
+            "Fusion"
+        ]
     },
     {
         "name": "Viridblaze Saurian",
         "id": "295",
         "cost": 3,
-        "elements": ["ER", "Fusion"]
+        "elements": [
+            "ER",
+            "Fusion"
+        ]
     },
     {
         "name": "Vitreum Dancer",
         "id": "32029",
         "cost": 3,
-        "elements": ["Radiance", "Empyrean"]
+        "elements": [
+            "Radiance",
+            "Empyrean"
+        ]
     },
     {
         "name": "Voltscourge Stalker",
         "id": "31038",
         "cost": 1,
-        "elements": ["Midnight", "Empyrean"]
+        "elements": [
+            "Midnight",
+            "Empyrean"
+        ]
     },
     {
         "name": "Whiff Whaff",
         "id": "085",
         "cost": 1,
-        "elements": ["Aero", "ER", "Healing"]
+        "elements": [
+            "Aero",
+            "ER",
+            "Healing"
+        ]
+    },
+    {
+        "name": "Windlash Coleoid",
+        "id": "32058",
+        "cost": 3,
+        "elements": [
+            "Rite"
+        ]
     },
     {
         "name": "Young Roseshroom",
         "id": "305",
         "cost": 1,
-        "elements": ["Aero", "Havoc"]
+        "elements": [
+            "Aero",
+            "Havoc"
+        ]
     },
     {
         "name": "Zig Zag",
         "id": "075",
         "cost": 1,
-        "elements": ["Spectro", "ER", "Attack"]
+        "elements": [
+            "Spectro",
+            "ER",
+            "Attack"
+        ]
+    },
+    {
+        "name": "Zip Zap",
+        "id": "31082",
+        "cost": 1,
+        "elements": [
+            "Pact",
+            "Rite"
+        ]
     }
 ]

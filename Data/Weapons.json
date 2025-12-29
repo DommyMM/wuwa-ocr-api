@@ -1,6 +1,16 @@
 {
     "Rectifiers": [
         {
+            "name": "Boson Astrolabe",
+            "id": "21050045",
+            "rarity": "5-star",
+            "ATK": "42",
+            "main_stat": "ER",
+            "base_main": "8.6",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Cosmic Ripples",
             "id": "21050015",
             "rarity": "5-star",
@@ -219,6 +229,26 @@
             "passive_stat": "12"
         },
         {
+            "name": "Phasic Homogenizer",
+            "id": "21030045",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Spectrum Blaster",
+            "id": "21030046",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Static Mist",
             "id": "21030015",
             "rarity": "5-star",
@@ -387,6 +417,26 @@
             "base_main": "8",
             "passive": "ATK%",
             "passive_stat": "12"
+        },
+        {
+            "name": "Radiance Cleaver",
+            "id": "21010045",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit DMG",
+            "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Starfield Calibrator",
+            "id": "21010066",
+            "rarity": "5-star",
+            "ATK": "33",
+            "main_stat": "ER",
+            "base_main": "17.1",
+            "passive": "DEF%",
+            "passive_stat": "16"
         },
         {
             "name": "Thunderflare Dominion",
@@ -577,6 +627,16 @@
             "ATK": "47",
             "main_stat": "Crit DMG",
             "base_main": "10.8",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Pulsation Bracer",
+            "id": "21040045",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
             "passive": "ATK%",
             "passive_stat": "12"
         },
@@ -775,6 +835,16 @@
             "ATK": "47",
             "main_stat": "Crit Rate",
             "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Laser Shearer",
+            "id": "21020045",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "ER",
+            "base_main": "8.6",
             "passive": "ATK%",
             "passive_stat": "12"
         },

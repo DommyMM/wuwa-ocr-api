@@ -336,6 +336,34 @@
         "ER": 100
     },
     {
+        "name": "Lynae",
+        "id": "60",
+        "title": "linnai",
+        "weaponType": "Pistol",
+        "element": "Spectro",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "Concerto",
+        "HP": 979,
+        "ATK": 30,
+        "DEF": 98,
+        "ER": 100
+    },
+    {
+        "name": "Mornye",
+        "id": "61",
+        "title": "moning",
+        "weaponType": "Broadblade",
+        "element": "Fusion",
+        "Bonus1": "Healing",
+        "Bonus2": "DEF",
+        "Role": "Support",
+        "HP": 1230,
+        "ATK": 23,
+        "DEF": 111,
+        "ER": 100
+    },
+    {
         "name": "Mortefi",
         "id": "13",
         "title": "baer",
