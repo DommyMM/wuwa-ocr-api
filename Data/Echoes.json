@@ -383,7 +383,8 @@
         "cost": 1,
         "elements": [
             "Pact",
-            "Rite"
+            "Rite",
+            "Sound"
         ]
     },
     {
@@ -473,7 +474,8 @@
         "cost": 1,
         "elements": [
             "Pact",
-            "Halo"
+            "Halo",
+            "Trailblazing"
         ]
     },
     {
@@ -511,6 +513,14 @@
             "Glacio",
             "ER",
             "Havoc"
+        ]
+    },
+    {
+        "name": "Glommoth",
+        "id": "32061",
+        "cost": 3,
+        "elements": [
+            "Trailblazing"
         ]
     },
     {
@@ -640,6 +650,14 @@
         ]
     },
     {
+        "name": "Iceglint Dancer",
+        "id": "31083",
+        "cost": 1,
+        "elements": [
+            "Trailblazing"
+        ]
+    },
+    {
         "name": "Impermanence Heron",
         "id": "995",
         "cost": 4,
@@ -679,6 +697,24 @@
             "Windward",
             "Flaming",
             "Flamewing"
+        ]
+    },
+    {
+        "name": "Kronablight",
+        "id": "32059",
+        "cost": 3,
+        "elements": [
+            "Trailblazing",
+            "Chromatic"
+        ]
+    },
+    {
+        "name": "Kronaclaw",
+        "id": "32060",
+        "cost": 3,
+        "elements": [
+            "Trailblazing",
+            "Chromatic"
         ]
     },
     {
@@ -767,7 +803,8 @@
         "cost": 1,
         "elements": [
             "Halo",
-            "Pact"
+            "Pact",
+            "Sound"
         ]
     },
     {
@@ -998,6 +1035,14 @@
         ]
     },
     {
+        "name": "Nameless Explorer",
+        "id": "34026",
+        "cost": 4,
+        "elements": [
+            "Sound"
+        ]
+    },
+    {
         "name": "Nimbus Wraith",
         "id": "31044",
         "cost": 1,
@@ -1039,7 +1084,8 @@
         "id": "34022",
         "cost": 4,
         "elements": [
-            "Halo"
+            "Halo",
+            "Chromatic"
         ]
     },
     {
@@ -1086,7 +1132,8 @@
         "cost": 3,
         "elements": [
             "Pact",
-            "Halo"
+            "Halo",
+            "Sound"
         ]
     },
     {
@@ -1095,7 +1142,8 @@
         "cost": 3,
         "elements": [
             "Pact",
-            "Halo"
+            "Halo",
+            "Sound"
         ]
     },
     {
@@ -1126,11 +1174,30 @@
         ]
     },
     {
+        "name": "Shadow Stepper",
+        "id": "31084",
+        "cost": 1,
+        "elements": [
+            "Trailblazing",
+            "Chromatic"
+        ]
+    },
+    {
+        "name": "Sigillum",
+        "id": "34025_0",
+        "cost": 4,
+        "elements": [
+            "Trailblazing"
+        ]
+    },
+    {
         "name": "Spacetrek Explorer",
         "id": "32054",
         "cost": 3,
         "elements": [
-            "Halo"
+            "Halo",
+            "Chromatic",
+            "Sound"
         ]
     },
     {
@@ -1219,7 +1286,8 @@
         "id": "31074",
         "cost": 1,
         "elements": [
-            "Halo"
+            "Halo",
+            "Chromatic"
         ]
     },
     {
@@ -1227,7 +1295,9 @@
         "id": "32050",
         "cost": 3,
         "elements": [
-            "Rite"
+            "Rite",
+            "Trailblazing",
+            "Sound"
         ]
     },
     {
@@ -1235,7 +1305,8 @@
         "id": "32049",
         "cost": 3,
         "elements": [
-            "Rite"
+            "Rite",
+            "Chromatic"
         ]
     },
     {
@@ -1355,7 +1426,9 @@
         "cost": 1,
         "elements": [
             "Pact",
-            "Rite"
+            "Rite",
+            "Chromatic",
+            "Sound"
         ]
     }
 ]

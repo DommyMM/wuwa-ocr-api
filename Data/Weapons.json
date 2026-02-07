@@ -631,6 +631,16 @@
             "passive_stat": "12"
         },
         {
+            "name": "Daybreaker's Spine",
+            "id": "21040056",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
             "name": "Pulsation Bracer",
             "id": "21040045",
             "rarity": "5-star",
@@ -836,6 +846,16 @@
             "main_stat": "Crit Rate",
             "base_main": "5.4",
             "passive": "ATK%",
+            "passive_stat": "12"
+        },
+        {
+            "name": "Everbright Polestar",
+            "id": "21020076",
+            "rarity": "5-star",
+            "ATK": "47",
+            "main_stat": "Crit Rate",
+            "base_main": "5.4",
+            "passive": "Attribute",
             "passive_stat": "12"
         },
         {

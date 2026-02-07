@@ -14,6 +14,20 @@
         "ER": 100
     },
     {
+        "name": "Aemeath",
+        "id": "53",
+        "title": "aimisi",
+        "weaponType": "Sword",
+        "element": "Fusion",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 882,
+        "ATK": 34,
+        "DEF": 94,
+        "ER": 100
+    },
+    {
         "name": "Augusta",
         "id": "51",
         "title": "aogusita",
@@ -333,6 +347,20 @@
         "HP": 953,
         "ATK": 31,
         "DEF": 97,
+        "ER": 100
+    },
+    {
+        "name": "Luuk",
+        "id": "54",
+        "title": "luhesi",
+        "weaponType": "Gauntlet",
+        "element": "Spectro",
+        "Bonus1": "Crit Rate",
+        "Bonus2": "ATK",
+        "Role": "DPS",
+        "HP": 824,
+        "ATK": 37,
+        "DEF": 91,
         "ER": 100
     },
     {
