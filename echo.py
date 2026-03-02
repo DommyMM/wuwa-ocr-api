@@ -5,7 +5,7 @@ from typing import Dict, List
 import json
 from rapidfuzz import process
 from rapidfuzz.utils import default_process
-from data import ECHO_NAMES, MAIN_STAT_NAMES, SUB_STATS, SUB_STAT_NAMES, ECHO_ELEMENTS, ECHO_REGIONS, ELEMENT_FEATURES
+from data import ECHO_NAMES, MAIN_STAT_NAMES, SUB_STATS, SUB_STAT_NAMES, ECHO_ELEMENTS, ECHO_NAME_MAP, ECHO_REGIONS, ELEMENT_FEATURES
 from cv2 import SIFT_create, FlannBasedMatcher
 
 def preprocess_echo_image(image):
@@ -216,7 +216,8 @@ def process_echo(image: np.ndarray):
         "success": True,
         "analysis": {
             "type": "Echo",
-            "name": name,
+            "name": ECHO_NAME_MAP.get(name, name),
+            "id": name,
             "element": element,
             "echoLevel": echo_level,
             "main": get_main(text_lines),

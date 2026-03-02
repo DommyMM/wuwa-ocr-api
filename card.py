@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
+from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -627,7 +627,7 @@ def process_card(image, region: str):
             return {
                 "success": True,
                 "analysis": {
-                    "name": {"name": name, "confidence": float(confidence)},
+                    "name": {"name": ECHO_NAME_MAP.get(name, name), "id": name, "confidence": float(confidence)},
                     "main": echo_data.get("main", {}),
                     "substats": echo_data.get("substats", []),
                     "element": element_data
