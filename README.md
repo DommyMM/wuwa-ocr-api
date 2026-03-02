@@ -1,90 +1,116 @@
-# Wuthering Waves Scanner Backend
+# Wuthering Waves OCR Backend
 
-FastAPI-based backend service for analyzing screenshots from Wuthering Waves. Features OCR (Optical Character Recognition) and element detection capabilities to extract information from both Echo screenshots and character cards. 
-Currently hosted at https://ocr.wuwabuilds.moe/
+FastAPI OCR service for WuWaBuilds import scans.  
+Hosted at `https://ocr.wuwabuilds.moe`.
 
-## Features
+## Runtime Model
 
-- Screenshot analysis using multiple OCR engines (RapidOCR and Tesseract)
-- Element detection via HSV color analysis
-- Name validation and matching with rapidfuzz
-- Stat normalization against known valid values
-- Character and weapon validation
-- Rate limiting (60 requests per minute per IP)
-- CORS support for web integration
-- Parallel processing with timeout protection
+- Single OCR mode: split-card region processing (`card.py`)
+- Legacy full-screen mode (`char.py` / `echo.py`) has been removed
+- Data is loaded from local `backend/Data/*.json` and template PNGs at startup import time
+- Echo, character, and weapon OCR results include IDs for robust frontend matching
 
-## Prerequisites
+## Start
 
-- Run Dockerfile & requirements.txt
-
-## Usage
-
-1. Start the server:
 ```bash
 python server.py
 ```
 
-Server will start on port 5000 by default (configurable via PORT environment variable).
+Default port is `5000` (`PORT` env var supported).
 
-## API Endpoints
+## API
 
 ### `POST /api/ocr`
-Process split card regions from the frontend import flow.
 
-Request:
+Process one cropped region image.
+
+Request body:
+
 ```json
 {
-    "image": "base64_encoded_image_string"
+  "image": "base64_encoded_image"
 }
 ```
 
-Headers:
+Recommended header:
+
 ```http
 X-OCR-Region: character | weapon | watermark | forte | sequences | echo1 | echo2 | echo3 | echo4 | echo5
 ```
 
-#### Echo Split Response (for `echo1`..`echo5`)
+Compatibility fallbacks (optional body fields):
+
+- `region`: direct region key
+- `type`: legacy `import-<region>` format
+
+`char-*` legacy mode is not supported.
+
+### Example Responses
+
+Character region:
+
 ```json
 {
-    "success": true,
-    "analysis": {
-        "name": {
-            "name": "Echo Name",
-            "id": "60000425",
-            "confidence": 0.85
-        },
-        "main": {
-            "name": "Stat Name",
-            "value": "Value"
-        },
-        "substats": [
-            { "name": "Substat Name", "value": "Value" }
-        ],
-        "element": "Element Type"
-    }
+  "success": true,
+  "analysis": {
+    "name": "Aemeath",
+    "id": "53",
+    "level": 90
+  }
 }
 ```
 
-### `GET /health`
-Health check endpoint.
+Weapon region:
 
-### `GET /`
-API documentation and status.
+```json
+{
+  "success": true,
+  "analysis": {
+    "name": "Everbright Polestar",
+    "id": "21020076",
+    "level": 90
+  }
+}
+```
 
-## Rate Limiting
+Echo region (`echo1`-`echo5`):
 
-- 60 requests per minute per IP address
-- Requests exceeding the limit will receive a 429 status code
+```json
+{
+  "success": true,
+  "analysis": {
+    "name": {
+      "name": "Sigillum",
+      "id": "60001915",
+      "confidence": 0.87
+    },
+    "main": { "name": "Crit DMG", "value": "44%" },
+    "substats": [{ "name": "Crit Rate", "value": "8.7%" }],
+    "element": "Trailblazing"
+  }
+}
+```
 
-## Error Handling
+### Other Endpoints
 
-- 400: Invalid image or processing error
-- 408: Processing timeout (60 seconds)
-- 429: Rate limit exceeded
-- 500: Server error
+- `GET /health` -> health check
+- `GET /` -> API status metadata
 
-## Known Limitations
+## Limits and Errors
 
-- Only handles English for now
-- Expects split regions from the import workflow (not the removed legacy full-screen mode)
+- Rate limit: `60` requests/minute per IP
+- Timeout: `60s` per OCR request
+- Common statuses:
+  - `400` invalid image/region/request
+  - `408` processing timeout
+  - `429` rate limit exceeded
+  - `500` internal server error
+
+## Data Sync Expectations
+
+The backend does not fetch runtime game data from production frontend URLs.  
+Keep `backend/Data` synchronized from `wuwabuilds/scripts`:
+
+1. `python sync_all.py`
+2. `python download_echo_icons.py --clean --force` (when templates need refresh)
+
