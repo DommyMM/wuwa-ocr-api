@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, WEAPON_NAMES, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
+from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -136,7 +136,7 @@ def parse_region_text(name, text):
                         break
             raw_name = " ".join(parts)
             char_name = validate_character_name(raw_name)
-            return {"name": char_name, "level": level}
+            return {"name": char_name, "id": CHARACTER_ID_MAP.get(char_name, ""), "level": level}
             
         case "watermark":
             lines = text.split('\n')
@@ -165,6 +165,7 @@ def parse_region_text(name, text):
                         break
             return {
                 "name": weapon_name,
+                "id": WEAPON_ID_MAP.get(weapon_name, ""),
                 "level": level
             }
         case _ if name.startswith("echo"):

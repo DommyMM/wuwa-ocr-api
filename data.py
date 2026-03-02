@@ -10,8 +10,10 @@ Rapid = RapidOCR(lang='en')
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
+CHARACTER_ID_MAP: Dict[str, str] = {}
 WEAPON_NAMES: List[str] = []
 WEAPON_DATA: Dict[str, str] = {}
+WEAPON_ID_MAP: Dict[str, str] = {}
 MAIN_STAT_NAMES: Set[str] = set()
 SUB_STATS: Dict = {}
 SUB_STAT_NAMES: Set[str] = set()
@@ -30,17 +32,30 @@ DATA_DIR = Path(__file__).parent / 'Data'
 
 def _load_from_local():
     """Load Characters, Weapons, Echoes from local Data/ files (legacy format)."""
-    global CHARACTER_NAMES, WEAPON_NAMES, WEAPON_DATA, ECHO_NAMES, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP
+    global CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_DATA, WEAPON_ID_MAP, ECHO_NAMES, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP
 
     with open(DATA_DIR / 'Characters.json', 'r', encoding='utf-8') as f:
-        CHARACTER_NAMES = [c['name'] for c in json.load(f)]
+        characters = json.load(f)
+        CHARACTER_NAMES = [c['name'] for c in characters]
+        CHARACTER_ID_MAP.clear()
+        for c in characters:
+            name = c.get('name', '')
+            cid = str(c.get('id', '')).strip()
+            if name and cid:
+                # Preserve first seen ID for duplicated names (Rover variants are handled in frontend fallback).
+                CHARACTER_ID_MAP.setdefault(name, cid)
 
-    WEAPON_NAMES.clear(); WEAPON_DATA.clear()
+    WEAPON_NAMES.clear(); WEAPON_DATA.clear(); WEAPON_ID_MAP.clear()
     with open(DATA_DIR / 'Weapons.json', 'r', encoding='utf-8') as f:
         for weapon_type, weapons in json.load(f).items():
             for w in weapons:
-                WEAPON_NAMES.append(w['name'])
-                WEAPON_DATA[w['name']] = weapon_type
+                name = w['name']
+                wid = str(w.get('id', '')).strip()
+                WEAPON_NAMES.append(name)
+                WEAPON_DATA[name] = weapon_type
+                # Preserve first seen ID for duplicated names.
+                if name and wid:
+                    WEAPON_ID_MAP.setdefault(name, wid)
 
     ECHO_NAMES.clear(); ECHO_ELEMENTS.clear(); ECHO_COSTS.clear(); ECHO_NAME_MAP.clear()
     with open(DATA_DIR / 'Echoes.json', 'r', encoding='utf-8') as f:

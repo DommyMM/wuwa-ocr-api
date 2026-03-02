@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 def worker_init():
-    """Ensure worker output is flushed"""
+    """Ensure worker output is flushed."""
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
 
