@@ -81,7 +81,7 @@ def preprocess_region(image):
     return thresh
 
 def clean_stat_name(name: str, value: str) -> str:
-    name = name.strip().replace(" DMG Bonus", "")
+    name = re.sub(r'\s+', ' ', name.strip()).replace("Crit.", "Crit")
     if name.upper() in ["ATK", "HP", "DEF"] and "%" in value:
         return f"{name.upper()}%"
     return name.upper() if name.upper() in ["ATK", "HP", "DEF"] else name
@@ -179,6 +179,8 @@ def parse_region_text(name, text):
             main_name, main_value = main_parts
             main_name = clean_stat_name(main_name, main_value)
             main_name = validate_stat(main_name, MAIN_STAT_NAMES)
+            if main_name in ["HP", "ATK", "DEF"]:
+                main_name = f"{main_name}%"
             main_value = main_value.replace('422', '22')
             
             substats = []
@@ -192,8 +194,7 @@ def parse_region_text(name, text):
                 name = clean_stat_name(stat_name, stat_value)
                 name = validate_stat(name, SUB_STATS.keys())
                 value = validate_value(stat_value, name)
-                final_name = name.replace("DMG Bonus", "")
-                substats.append({"name": final_name, "value": value})
+                substats.append({"name": name, "value": value})
             
             result = {
                 "main": {"name": main_name, "value": main_value},
