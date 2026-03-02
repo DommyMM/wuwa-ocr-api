@@ -30,79 +30,39 @@ Server will start on port 5000 by default (configurable via PORT environment var
 ## API Endpoints
 
 ### `POST /api/ocr`
-Process screenshots for Echo analysis or Character import.
+Process split card regions from the frontend import flow.
 
 Request:
 ```json
 {
-    "image": "base64_encoded_image_string",
-    "type": "echo | card"
+    "image": "base64_encoded_image_string"
 }
 ```
 
-#### Echo Response (type: "echo"):
+Headers:
+```http
+X-OCR-Region: character | weapon | watermark | forte | sequences | echo1 | echo2 | echo3 | echo4 | echo5
+```
+
+#### Echo Split Response (for `echo1`..`echo5`)
 ```json
 {
     "success": true,
     "analysis": {
-        "type": "Echo",
-        "name": "Echo Name",
-        "element": "Element Type",
-        "echoLevel": "25",
+        "name": {
+            "name": "Echo Name",
+            "id": "60000425",
+            "confidence": 0.85
+        },
         "main": {
             "name": "Stat Name",
             "value": "Value"
         },
-        "subs": [
-            {
-                "name": "Substat Name",
-                "value": "Value"
-            }
-            // ... up to 5 substats
-        ]
+        "substats": [
+            { "name": "Substat Name", "value": "Value" }
+        ],
+        "element": "Element Type"
     }
-}
-```
-
-#### Character Card Response (type: "import"):
-```json
-{
-    "character": {
-        "name": "Character Name",
-        "level": 90
-    },
-    "watermark": {
-        "username": "Player Name",
-        "uid": 500000000
-    },
-    "weapon": {
-        "name": "Weapon Name",
-        "level": 90
-    },
-    "fortes": [
-        "10", "10", "10", "10", "10"
-    ],
-    "echoes": [
-        {
-            "name": {
-                "name": "Echo Name",
-                "confidence": 0.85
-            },
-            "main": {
-                "name": "Main Stat",
-                "value": "Value"
-            },
-            "substats": [
-                {
-                    "name": "Substat Name",
-                    "value": "Value"
-                }
-                // ... up to 5 substats
-            ],
-            "element": "Element Type"
-        }
-        // ... 5 echoes total
-    ]
 }
 ```
 
@@ -127,5 +87,4 @@ API documentation and status.
 ## Known Limitations
 
 - Only handles English for now
-- For echo type: Image must be a screenshot of an individual Echo
-- For import type: Image must be a full screenshot from the character builder
+- Expects split regions from the import workflow (not the removed legacy full-screen mode)

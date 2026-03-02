@@ -8,7 +8,6 @@ import base64
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from typing import Optional
 from card import process_card
-from char import process_char
 import time
 from collections import defaultdict
 import os
@@ -47,7 +46,8 @@ class RateLimiter:
 
 class ImageRequest(BaseModel):
     image: str
-    type: str
+    region: Optional[str] = None
+    type: Optional[str] = None  # Legacy fallback ("import-<region>")
 
 class OCRResponse(BaseModel):
     success: bool
@@ -62,8 +62,12 @@ class APIStatus(BaseModel):
             "method": "POST",
             "request": {
                 "image": "string (base64 encoded image)",
-                "type": "string ('char-type' or 'import-type')"
-            }
+                "region": "string (optional body fallback)",
+                "type": "string (legacy fallback: 'import-<region>')"
+            },
+            "headers": {
+                "X-OCR-Region": "string (recommended region identifier)"
+            },
         }
     }
 
@@ -109,7 +113,7 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-async def process_card_image(image_bytes: bytes, type: str):
+async def process_card_image(image_bytes: bytes, region: str):
     try:
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -117,7 +121,7 @@ async def process_card_image(image_bytes: bytes, type: str):
             raise ValueError("Failed to decode image")
         
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_card, image, type)
+        future = loop.run_in_executor(executor, process_card, image, region)
         result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
         return result
             
@@ -131,63 +135,63 @@ async def process_card_image(image_bytes: bytes, type: str):
             
         raise HTTPException(status_code=400, detail=f"Image processing error: {error_msg}")
 
-async def process_char_image(image_bytes: bytes, type: str):
-    try:
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if image is None:
-            raise ValueError("Failed to decode image")
-        
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(executor, process_char, image, type)
-        result = await asyncio.wait_for(future, timeout=PROCESS_TIMEOUT)
-        return result
-        
-    except TimeoutError:
-        raise HTTPException(status_code=408, detail=f"Processing timeout exceeded ({PROCESS_TIMEOUT} seconds)")
-    except Exception as e:
-        error_msg = str(e)
-        
-        if "terminated abruptly" in error_msg.lower():
-            force_restart(f"ProcessPool worker terminated abruptly: {error_msg}")
-            
-        raise HTTPException(status_code=400, detail=f"Image processing error: {error_msg}")
+def resolve_region(request: Request, image_data: ImageRequest) -> str:
+    header_region = request.headers.get("x-ocr-region")
+    if header_region and header_region.strip():
+        return header_region.strip()
+
+    if image_data.region and image_data.region.strip():
+        return image_data.region.strip()
+
+    legacy_type = (image_data.type or "").strip()
+    if legacy_type.startswith("import-"):
+        return legacy_type.replace("import-", "", 1).strip()
+    if legacy_type.startswith("char-"):
+        raise HTTPException(
+            status_code=400,
+            detail="Legacy char-* mode was removed. Send X-OCR-Region for split-card OCR regions.",
+        )
+    if legacy_type and "-" not in legacy_type:
+        return legacy_type
+
+    raise HTTPException(
+        status_code=400,
+        detail="Missing OCR region. Send X-OCR-Region (for example: character, weapon, watermark, forte, sequences, echo1..echo5).",
+    )
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
     global consecutive_500s
 
     request_start = time.perf_counter()
-    print(f"{image_data.type}: Processing request", flush=True)
+    region = "unknown"
         
     try:
+        region = resolve_region(request, image_data)
+        print(f"{region}: Processing request", flush=True)
+
         image_str = image_data.image
         if ',' in image_str:
             image_str = image_str.split(',')[1]
         image_bytes = base64.b64decode(image_str)
-        
-        if image_data.type.startswith("char-"):
-            type_name = image_data.type.replace("char-", "")
-            result = await process_char_image(image_bytes, type_name)
-        elif image_data.type.startswith("import-"):
-            type_name = image_data.type.replace("import-", "")
-            result = await process_card_image(image_bytes, type_name)
-        else:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "error": f"Unsupported type: {image_data.type}"
-                }
-            )
+
+        result = await process_card_image(image_bytes, region)
             
-        print(f"{image_data.type}: Completed in {time.perf_counter() - request_start:.2f}s", flush=True)
+        print(f"{region}: Completed in {time.perf_counter() - request_start:.2f}s", flush=True)
         
         consecutive_500s = 0
         return result
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={
+                "success": False,
+                "error": e.detail
+            }
+        )
         
     except Exception as e:
-        print(f"{image_data.type}: Failed - {str(e)}", flush=True)
+        print(f"{region}: Failed - {str(e)}", flush=True)
         
         consecutive_500s += 1
         if consecutive_500s > 1:
