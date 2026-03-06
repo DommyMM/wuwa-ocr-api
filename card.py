@@ -5,6 +5,7 @@ import data
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
+from collections.abc import Collection
 import imagehash
 from PIL import Image
 import io
@@ -87,7 +88,7 @@ def clean_stat_name(name: str, value: str) -> str:
         return f"{name.upper()}%"
     return name.upper() if name.upper() in ["ATK", "HP", "DEF"] else name
 
-def validate_stat(name: str, valid_names: set) -> str:
+def validate_stat(name: str, valid_names: Collection[str]) -> str:
     if not valid_names:
         return name
     match = process.extractOne(name, list(valid_names))
@@ -219,19 +220,16 @@ def get_element_region(image):
 
 def determine_element(image, filter_elements):
     """Match element using SIFT features
-
     Args:
         image: Element icon region
-        filter_elements: Either a string (echo_name) or list of element names to check against
-
+        filter_elements: Either a string (echo ID) or list of element names to check against
     Returns:
         Best matching element name
     """
-    # Handle both string (echo_name) and list (candidate elements) inputs
+    # Handle both string (echo ID) and list (candidate elements) inputs
     if isinstance(filter_elements, str):
-        # Filter by echo name
-        base_name = filter_elements.replace("Phantom ", "") if filter_elements.startswith("Phantom ") else filter_elements
-        possible_elements = data.ECHO_ELEMENTS.get(base_name, ["Unknown"])
+        # Current dataset stores canonical echo IDs, so we can directly map to possible elements
+        possible_elements = data.ECHO_ELEMENTS.get(filter_elements, ["Unknown"])
     else:
         # Else provided element list
         possible_elements = filter_elements if filter_elements else ["Unknown"]
@@ -275,7 +273,9 @@ def get_echo_cost(image: np.ndarray) -> int:
 def calculate_vibrancy_score(img: np.ndarray) -> float:
     """Calculate vibrancy score based on color intensity and distribution"""
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(img, (1, 1, 1), (255, 255, 255))
+    lower = np.array([1, 1, 1], dtype=np.uint8)
+    upper = np.array([255, 255, 255], dtype=np.uint8)
+    mask = cv2.inRange(img, lower, upper)
 
     h, s, v = cv2.split(hsv)
     s_masked = s[mask > 0]
@@ -284,8 +284,8 @@ def calculate_vibrancy_score(img: np.ndarray) -> float:
     if len(s_masked) == 0:
         return 0.0
 
-    avg_saturation = np.mean(s_masked)
-    avg_brightness = np.mean(v_masked)
+    avg_saturation = float(np.mean(np.asarray(s_masked, dtype=np.float32)))
+    avg_brightness = float(np.mean(np.asarray(v_masked, dtype=np.float32)))
 
     # Vibrancy combines saturation and brightness
     return (avg_saturation * 0.6 + avg_brightness * 0.4) / 2.55
@@ -293,7 +293,9 @@ def calculate_vibrancy_score(img: np.ndarray) -> float:
 def analyze_nightmare_indicators(img: np.ndarray) -> dict:
     """Analyze image for nightmare variant indicators"""
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(img, (1, 1, 1), (255, 255, 255))
+    lower = np.array([1, 1, 1], dtype=np.uint8)
+    upper = np.array([255, 255, 255], dtype=np.uint8)
+    mask = cv2.inRange(img, lower, upper)
 
     h, s, v = cv2.split(hsv)
     s_masked = s[mask > 0]
@@ -302,8 +304,8 @@ def analyze_nightmare_indicators(img: np.ndarray) -> dict:
     if len(s_masked) == 0:
         return {"avg_saturation": 0, "avg_brightness": 0, "vibrancy_score": 0, "nightmare_score": 0}
 
-    avg_saturation = np.mean(s_masked)
-    avg_brightness = np.mean(v_masked)
+    avg_saturation = float(np.mean(np.asarray(s_masked, dtype=np.float32)))
+    avg_brightness = float(np.mean(np.asarray(v_masked, dtype=np.float32)))
     vibrancy_score = calculate_vibrancy_score(img)
     high_saturation_ratio = np.sum(s_masked > 100) / len(s_masked)
 
@@ -838,6 +840,7 @@ def process_card(image, region: str):
             name, confidence, element_data = match_icon(image)
             print(f"Echo identified: {name} (confidence: {confidence:.2%})")
             echo_data = parse_region_text(region, cleaned_text)
+            echo_payload = echo_data if isinstance(echo_data, dict) else {"main": {}, "substats": []}
             print(f"Echo '{name}' -> Element: {element_data}")
             
             # Restore stdout and flush all buffered logs at once
@@ -850,8 +853,8 @@ def process_card(image, region: str):
                 "success": True,
                 "analysis": {
                     "name": {"name": data.ECHO_NAME_MAP.get(name, name), "id": name, "confidence": float(confidence)},
-                    "main": echo_data.get("main", {}),
-                    "substats": echo_data.get("substats", []),
+                    "main": echo_payload.get("main", {}),
+                    "substats": echo_payload.get("substats", []),
                     "element": element_data
                 }
             }
