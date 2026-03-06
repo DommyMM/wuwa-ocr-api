@@ -4,7 +4,7 @@ import re
 import data
 import numpy as np
 from rapidfuzz import process
-from typing import Tuple
+from typing import Dict, Tuple
 from collections.abc import Collection
 import imagehash
 from PIL import Image
@@ -403,14 +403,105 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
 
     return max(0.0, min(1.0, similarity_score))
 
-def get_phash_ranked(icon_img: np.ndarray) -> list:
-    """Return all template names sorted by pHash distance (closest first)"""
+def get_phash_scored(icon_img: np.ndarray) -> list:
+    """Return all templates as (name, pHash distance), sorted by distance."""
     pil = Image.fromarray(cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB))
     h = imagehash.phash(pil, hash_size=16)
     dists = [(name, h - th) for name, th in data.TEMPLATE_PHASHES.items()]
     dists.sort(key=lambda x: x[1])
+    return dists
+
+
+def get_phash_ranked(icon_img: np.ndarray) -> list:
+    """Return all template names sorted by pHash distance (closest first)"""
+    dists = get_phash_scored(icon_img)
     return [name for name, _ in dists]
 
+
+def _echo_base_name(template_id: str) -> str:
+    """Normalize echo display name so nightmare/normal variants share a base."""
+    display = data.ECHO_NAME_MAP.get(template_id, template_id)
+    prefix = "Nightmare: "
+    if display.startswith(prefix):
+        return display[len(prefix):]
+    return display
+
+
+def _is_nightmare_variant(template_id: str) -> bool:
+    display = data.ECHO_NAME_MAP.get(template_id, template_id)
+    return display.startswith("Nightmare: ") or template_id in NIGHTMARE_TEMPLATE_IDS
+
+
+def _has_nightmare_collision(ranked: list, top_k: int = 5, min_conf: float = 0.08) -> bool:
+    """Detect if top candidates contain nightmare/normal siblings for same base name."""
+    base_flags: dict[str, set[bool]] = {}
+    for name, conf in ranked[:top_k]:
+        if conf < min_conf:
+            continue
+        base = _echo_base_name(name)
+        base_flags.setdefault(base, set()).add(_is_nightmare_variant(name))
+    return any(len(flags) > 1 for flags in base_flags.values())
+
+
+def _rank_metrics(ranked: list) -> Dict[str, float]:
+    """Compute top-match confidence metrics used for stage gating."""
+    if not ranked:
+        return {"top1": 0.0, "top2": 0.0, "gap": 0.0, "ratio": 0.0}
+    top1 = ranked[0][1]
+    top2 = ranked[1][1] if len(ranked) > 1 else 0.0
+    gap = top1 - top2 if len(ranked) > 1 else top1
+    ratio = (top1 / top2) if top2 > 0 else float("inf")
+    return {"top1": top1, "top2": top2, "gap": gap, "ratio": ratio}
+
+
+def _strong_accept(ranked: list, phash_rank_map: Dict[str, int]) -> bool:
+    """Conservative early-accept gate to preserve parity."""
+    if len(ranked) < 2:
+        return False
+    m = _rank_metrics(ranked)
+    top_name = ranked[0][0]
+    phash_rank = phash_rank_map.get(top_name, 10**9)
+    if _has_nightmare_collision(ranked):
+        return False
+    return (
+        m["top1"] >= 0.35
+        and m["gap"] >= 0.20
+        and m["ratio"] >= 3.0
+        and phash_rank <= 3
+    )
+
+
+def _needs_full_fallback(ranked: list) -> bool:
+    """Decide if staged candidate set is still too ambiguous."""
+    if len(ranked) < 2:
+        return True
+    m = _rank_metrics(ranked)
+    if _has_nightmare_collision(ranked):
+        return True
+    return (m["gap"] < 0.08) or (m["ratio"] < 1.5)
+
+
+def _expand_candidates(phash_scored: list, seeds: list[str], max_phash: int) -> list[str]:
+    """Expand candidate pool with pHash shortlist and nightmare/normal siblings."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def add(name: str) -> None:
+        if name not in seen:
+            seen.add(name)
+            ordered.append(name)
+
+    # Start with nearest pHash candidates.
+    for name, _ in phash_scored[:max_phash]:
+        add(name)
+
+    # Add siblings (nightmare/normal) for top ambiguous seeds.
+    seed_bases = {_echo_base_name(name) for name in seeds}
+    for template_id in data.ECHO_NAME_MAP:
+        if _echo_base_name(template_id) in seed_bases:
+            add(template_id)
+
+    return ordered
 
 def sift_rank(icon_features: tuple, candidates: list) -> list:
     """SIFT match icon against candidate templates, return sorted by confidence.
@@ -525,11 +616,7 @@ def disambiguate_by_cost(image: np.ndarray, ranked: list) -> list:
 
 
 def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -> Tuple[str, float, str | None]:
-    """Apply rewrite-equivalent element/color/cost tiebreak logic.
-
-    Returns:
-        (best_name, best_confidence, detected_element_or_none)
-    """
+    """Apply rewrite-equivalent element/color/cost tiebreak logic."""
     if not ranked:
         return ("Unknown", 0.0, None)
 
@@ -542,7 +629,6 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
 
         nightmare_count = sum(1 for name, _ in close_matches if is_nightmare_template(name))
         if nightmare_count >= 2:
-            print("Multiple nightmare variants detected, filtering weaker nightmare")
             best_nightmare = max(
                 [m for m in close_matches if is_nightmare_template(m[0])],
                 key=lambda x: x[1],
@@ -553,9 +639,6 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
             ]
 
         if len(close_matches) >= 2:
-            close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
-            print(f"Close matches detected: {close_scores}")
-
             element_region = get_element_region(image)
             candidate_elements = set()
             for name, _ in close_matches:
@@ -571,7 +654,6 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
 
             if len(element_matches) == 1:
                 best_match, best_conf = element_matches[0]
-                print(f"-> Matched {detected_element} -> '{best_match}'")
             else:
                 color_scores = []
                 for name, _ in close_matches:
@@ -580,7 +662,6 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
 
                 best_color_match = max(color_scores, key=lambda x: x[1])
                 if best_color_match[0] != best_match:
-                    print(f"-> Color-based: {best_match} -> {best_color_match[0]}")
                     best_match = best_color_match[0]
                     for name, conf in ranked:
                         if name == best_match:
@@ -589,13 +670,11 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
 
     if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
         actual_cost = get_echo_cost(image)
-        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}")
         if actual_cost in [1, 3, 4]:
             best_cost = data.ECHO_COSTS.get(best_match, 0)
             if best_cost != actual_cost:
                 for name, conf in secondary_matches:
                     if data.ECHO_COSTS.get(name, 0) == actual_cost:
-                        print(f"-> Cost-based selection: {name} (matches cost {actual_cost})")
                         best_match = name
                         best_conf = conf
                         break
@@ -617,8 +696,27 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     icon_features = sift.detectAndCompute(icon_img, None)
 
     # All candidates sorted by pHash distance (closest first)
-    all_candidates = get_phash_ranked(icon_img)
-    ranked = sift_rank(icon_features, all_candidates)
+    phash_scored = get_phash_scored(icon_img)
+    all_candidates = [name for name, _ in phash_scored]
+    phash_rank_map = {name: idx + 1 for idx, (name, _) in enumerate(phash_scored)}
+
+    top_n1 = 12
+    top_n2 = 40
+
+    stage1_candidates = all_candidates[:top_n1]
+    ranked_stage1 = sift_rank(icon_features, stage1_candidates)
+
+    if _strong_accept(ranked_stage1, phash_rank_map):
+        ranked = ranked_stage1
+    else:
+        seeds = [name for name, _ in ranked_stage1[:5]]
+        stage2_candidates = _expand_candidates(phash_scored, seeds, top_n2)
+        ranked_stage2 = sift_rank(icon_features, stage2_candidates)
+
+        if _needs_full_fallback(ranked_stage2):
+            ranked = sift_rank(icon_features, all_candidates)
+        else:
+            ranked = ranked_stage2
 
     if not ranked:
         return ("Unknown", 0.0, "Unknown")
