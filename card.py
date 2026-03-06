@@ -392,18 +392,21 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
 
     return max(0.0, min(1.0, similarity_score))
 
-def get_sift_candidates(icon_img: np.ndarray, top_k: int = 30) -> list:
-    """Sub-millisecond pHash pre-filter to reduce SIFT search space"""
+def get_phash_ranked(icon_img: np.ndarray) -> list:
+    """Return all template names sorted by pHash distance (closest first)"""
     pil = Image.fromarray(cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB))
     h = imagehash.phash(pil, hash_size=16)
     dists = [(name, h - th) for name, th in TEMPLATE_PHASHES.items()]
     dists.sort(key=lambda x: x[1])
-    return [name for name, _ in dists[:top_k]]
+    return [name for name, _ in dists]
 
 
-def sift_rank(icon_img: np.ndarray, candidates: list) -> list:
-    """SIFT match icon against candidate templates, return sorted by confidence"""
-    kp1, des1 = _SIFT.detectAndCompute(icon_img, None)
+def sift_rank(icon_features: tuple, candidates: list) -> list:
+    """SIFT match icon against candidate templates, return sorted by confidence.
+    icon_features: (keypoints, descriptors) pre-computed for the icon."""
+    kp1, des1 = icon_features
+    if des1 is None:
+        return []
     results = []
     for name in candidates:
         if name not in TEMPLATE_FEATURES:
@@ -499,24 +502,12 @@ def disambiguate_by_cost(image: np.ndarray, ranked: list) -> list:
     return ranked
 
 
-def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
-    """SIFT-based icon matching with pHash pre-filter and disambiguation chain.
-
-    Returns:
-        Tuple of (echo_name, confidence, element)
-    """
-    icon_img = image[0:182, 0:188]
-
-    # Phase 1: pHash pre-filter + SIFT ranking
-    candidates = get_sift_candidates(icon_img)
-    ranked = sift_rank(icon_img, candidates)
-
-    if not ranked:
-        return ("Unknown", 0.0, "Unknown")
-
+def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray,
+                        ranked: list) -> Tuple[list, str | None]:
+    """Run the element → color → cost disambiguation chain.
+    Returns (reranked_list, detected_element_or_None)."""
     detected_element = None
 
-    # Phase 2: Disambiguation (only if needed)
     if needs_tiebreak(ranked, threshold=0.10):
         ranked, detected_element = disambiguate_by_element(image, ranked)
 
@@ -526,9 +517,63 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     if needs_tiebreak(ranked, threshold=0.25):
         ranked = disambiguate_by_cost(image, ranked)
 
+    return ranked, detected_element
+
+
+# Confidence below this triggers expanding the candidate pool
+_LOW_CONF_THRESHOLD = 0.15
+_INITIAL_K = 30
+
+
+def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
+    """SIFT-based icon matching with pHash pre-filter and disambiguation chain.
+
+    Uses exponential search: tries top 30 pHash candidates first, then doubles
+    the pool (30→60→120→all) until confidence >= 15% or all templates checked.
+    Only SIFTs new candidates each round and merges with previous results.
+
+    Returns:
+        Tuple of (echo_name, confidence, element)
+    """
+    icon_img = image[0:182, 0:188]
+    icon_features = _SIFT.detectAndCompute(icon_img, None)
+
+    # All candidates sorted by pHash distance (closest first)
+    all_candidates = get_phash_ranked(icon_img)
+    total = len(all_candidates)
+
+    ranked = []
+    detected_element = None
+    prev_k = 0
+    k = _INITIAL_K
+
+    while prev_k < total:
+        k = min(k, total)
+        batch = all_candidates[prev_k:k]
+
+        new_ranked = sift_rank(icon_features, batch)
+        ranked = sorted(ranked + new_ranked, key=lambda x: x[1], reverse=True)
+
+        if not ranked:
+            prev_k = k
+            k *= 2
+            continue
+
+        ranked, detected_element = _run_disambiguation(image, icon_img, ranked)
+
+        if ranked[0][1] >= _LOW_CONF_THRESHOLD or k >= total:
+            break
+
+        print(f"Low confidence {ranked[0][1]:.2%} after {k} candidates, expanding to {min(k * 2, total)}")
+        prev_k = k
+        k *= 2
+
+    if not ranked:
+        return ("Unknown", 0.0, "Unknown")
+
     best_name, best_conf = ranked[0]
 
-    # Phase 3: Confirmatory element detection
+    # Confirmatory element detection
     if detected_element is None:
         element_region = get_element_region(image)
         detected_element = determine_element(element_region, best_name)
