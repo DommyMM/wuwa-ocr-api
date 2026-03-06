@@ -52,7 +52,7 @@ def process_ocr(name: str, image: np.ndarray) -> str:
             return pytesseract.image_to_string(processed_image, config='--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ')
 
         def run_rapid():
-            result, _ = data.Rapid(image)
+            result, _ = data.run_rapid(image)
             return "\n".join(text for _, text, _ in result) if result else ""
 
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -64,7 +64,7 @@ def process_ocr(name: str, image: np.ndarray) -> str:
         return f"{name_text.strip()}\n{rapid_text.strip()}"
     elif name == "weapon":
         # Keep data.Rapid OCR for weapons
-        result, _ = data.Rapid(image)
+        result, _ = data.run_rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
         return ""
@@ -234,14 +234,16 @@ def determine_element(image, filter_elements):
         # Else provided element list
         possible_elements = filter_elements if filter_elements else ["Unknown"]
 
-    kp1, des1 = data._SIFT.detectAndCompute(image, None)
+    sift = data._make_sift()
+    kp1, des1 = sift.detectAndCompute(image, None)
     if des1 is None:
         return "Unknown"
 
+    flann = data._make_flann()
     matches = []
     for name, (kp2, des2) in data.ELEMENT_FEATURES.items():
         if name in possible_elements:
-            matches_list = data._FLANN.knnMatch(des1, des2, k=2)
+            matches_list = flann.knnMatch(des1, des2, k=2)
             good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
             confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
             matches.append((name, confidence))
@@ -251,7 +253,7 @@ def get_echo_cost(image: np.ndarray) -> int:
     """Get echo cost from image region"""
     cost_img = image[9:61, 302:345]
     
-    result, _ = data.Rapid(cost_img)
+    result, _ = data.run_rapid(cost_img)
     if result:
         raw_cost = result[0][1]
         cost_mapping = {
@@ -425,12 +427,13 @@ def sift_rank(icon_features: tuple, candidates: list) -> list:
     kp1, des1 = icon_features
     if des1 is None:
         return []
+    flann = data._make_flann()
     results = []
     for name in candidates:
         if name not in data.TEMPLATE_FEATURES:
             continue
         kp2, des2 = data.TEMPLATE_FEATURES[name]
-        matches_list = data._FLANN.knnMatch(des1, des2, k=2)
+        matches_list = flann.knnMatch(des1, des2, k=2)
         good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
         confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
         results.append((name, confidence))
@@ -618,7 +621,8 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
         Tuple of (echo_name, confidence, element)
     """
     icon_img = image[0:182, 0:188]
-    icon_features = data._SIFT.detectAndCompute(icon_img, None)
+    sift = data._make_sift()
+    icon_features = sift.detectAndCompute(icon_img, None)
 
     # All candidates sorted by pHash distance (closest first)
     all_candidates = get_phash_ranked(icon_img)
@@ -726,7 +730,7 @@ def _ocr_subs_single_pass(image: np.ndarray) -> str | None:
         ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_values"]["y2"],
         ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]
     ]
-    result, _ = data.Rapid(subs_region)
+    result, _ = data.run_rapid(subs_region)
 
     if not result or len(result) < 5:
         return None
@@ -762,11 +766,11 @@ def _ocr_subs_legacy(image: np.ndarray) -> str:
     names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
 
     if len(names_lines) < 5:
-        rapid_result, _ = data.Rapid(names_img)
+        rapid_result, _ = data.run_rapid(names_img)
         names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
 
     if len(tess_values) != 5:
-        rapid_result, _ = data.Rapid(values_img)
+        rapid_result, _ = data.run_rapid(values_img)
         values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
     else:
         values_lines = tess_values

@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import threading
 import cv2
 import numpy as np
 from typing import Dict, List, Set
@@ -8,11 +9,32 @@ from rapidocr_onnxruntime import RapidOCR
 import imagehash
 from PIL import Image
 
+# Legacy singleton kept for backward compatibility; prefer run_rapid for request paths.
 Rapid = RapidOCR(lang='en')
+_THREAD_LOCAL = threading.local()
 
 # Cached CV instances — created once, reused across all calls
 _SIFT = SIFT_create()
-_FLANN = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+_FLANN_PARAMS = (dict(algorithm=1, trees=5), dict(checks=50))
+
+
+def _make_sift():
+    """Create a fresh SIFT instance for request-local feature extraction."""
+    return SIFT_create()
+
+
+def _make_flann() -> FlannBasedMatcher:
+    """Create a fresh FLANN matcher instance for request-local matching."""
+    return FlannBasedMatcher(*_FLANN_PARAMS)
+
+
+def run_rapid(image):
+    """Run RapidOCR using a thread-local engine instance."""
+    engine = getattr(_THREAD_LOCAL, "rapid", None)
+    if engine is None:
+        engine = RapidOCR(lang='en')
+        _THREAD_LOCAL.rapid = engine
+    return engine(image)
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
