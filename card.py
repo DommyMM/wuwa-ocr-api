@@ -403,7 +403,14 @@ def get_phash_ranked(icon_img: np.ndarray) -> list:
 
 def sift_rank(icon_features: tuple, candidates: list) -> list:
     """SIFT match icon against candidate templates, return sorted by confidence.
-    icon_features: (keypoints, descriptors) pre-computed for the icon."""
+
+    Args:
+        icon_features: (keypoints, descriptors) pre-computed for the icon.
+        candidates: list of template name strings to match against.
+
+    Returns:
+        List of (name, confidence) tuples, sorted by confidence descending.
+    """
     kp1, des1 = icon_features
     if des1 is None:
         return []
