@@ -1,10 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import (CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP,
-                  MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP,
-                  TEMPLATE_FEATURES, ELEMENT_FEATURES, ICON_TEMPLATES,
-                  TEMPLATE_PHASHES, TEMPLATE_HISTOGRAMS, _SIFT, _FLANN, Rapid)
+import data
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -46,7 +43,7 @@ ECHO_REGIONS = {
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
     if name == "character":
-        # Parallel hybrid: Tesseract for name accuracy + Rapid for level detection
+        # Parallel hybrid: Tesseract for name accuracy + data.Rapid for level detection
         from concurrent.futures import ThreadPoolExecutor
 
         def run_tesseract():
@@ -54,7 +51,7 @@ def process_ocr(name: str, image: np.ndarray) -> str:
             return pytesseract.image_to_string(processed_image, config='--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ')
 
         def run_rapid():
-            result, _ = Rapid(image)
+            result, _ = data.Rapid(image)
             return "\n".join(text for _, text, _ in result) if result else ""
 
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -65,8 +62,8 @@ def process_ocr(name: str, image: np.ndarray) -> str:
 
         return f"{name_text.strip()}\n{rapid_text.strip()}"
     elif name == "weapon":
-        # Keep Rapid OCR for weapons
-        result, _ = Rapid(image)
+        # Keep data.Rapid OCR for weapons
+        result, _ = data.Rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
         return ""
@@ -97,20 +94,20 @@ def validate_stat(name: str, valid_names: set) -> str:
     return match[0] if match else name
 
 def validate_value(value: str, stat_name: str) -> str:
-    if not SUB_STATS or stat_name not in SUB_STATS:
+    if not data.SUB_STATS or stat_name not in data.SUB_STATS:
         return value
         
     had_percent = "%" in value
     clean_value = value.replace('%', '')
     
     try:
-        valid_values = [str(v) for v in SUB_STATS[stat_name]]
+        valid_values = [str(v) for v in data.SUB_STATS[stat_name]]
         match = process.extractOne(clean_value, valid_values)
         if match:
             float_value = float(clean_value)
             matched_value = float(match[0])
             if abs(float_value - matched_value) > 2.0:
-                closest = min(SUB_STATS[stat_name], key=lambda x: abs(float_value - x))
+                closest = min(data.SUB_STATS[stat_name], key=lambda x: abs(float_value - x))
                 if abs(float_value - closest) <= 1.0:
                     return f"{closest}%" if had_percent else str(closest)
             else:
@@ -121,9 +118,9 @@ def validate_value(value: str, stat_name: str) -> str:
     return value
 
 def validate_character_name(raw_name: str) -> str:
-    if not CHARACTER_NAMES:
+    if not data.CHARACTER_NAMES:
         return raw_name
-    match = process.extractOne(raw_name, CHARACTER_NAMES)
+    match = process.extractOne(raw_name, data.CHARACTER_NAMES)
     return match[0] if match else raw_name
 
 def parse_region_text(name, text):
@@ -140,7 +137,7 @@ def parse_region_text(name, text):
                         break
             raw_name = " ".join(parts)
             char_name = validate_character_name(raw_name)
-            return {"name": char_name, "id": CHARACTER_ID_MAP.get(char_name, ""), "level": level}
+            return {"name": char_name, "id": data.CHARACTER_ID_MAP.get(char_name, ""), "level": level}
             
         case "watermark":
             lines = text.split('\n')
@@ -153,9 +150,9 @@ def parse_region_text(name, text):
 
         case "weapon":
             def validate_weapon_name(raw_name: str) -> str:
-                if not WEAPON_NAMES:
+                if not data.WEAPON_NAMES:
                     return raw_name
-                match = process.extractOne(raw_name, WEAPON_NAMES)
+                match = process.extractOne(raw_name, data.WEAPON_NAMES)
                 return match[0] if match else raw_name
             lines = text.split('\n')
             raw_name = lines[0].strip() if lines else "Unknown"
@@ -169,7 +166,7 @@ def parse_region_text(name, text):
                         break
             return {
                 "name": weapon_name,
-                "id": WEAPON_ID_MAP.get(weapon_name, ""),
+                "id": data.WEAPON_ID_MAP.get(weapon_name, ""),
                 "level": level
             }
         case _ if name.startswith("echo"):
@@ -182,7 +179,7 @@ def parse_region_text(name, text):
                 return []
             main_name, main_value = main_parts
             main_name = clean_stat_name(main_name, main_value)
-            main_name = validate_stat(main_name, MAIN_STAT_NAMES)
+            main_name = validate_stat(main_name, data.MAIN_STAT_NAMES)
             if main_name in ["HP", "ATK", "DEF"]:
                 main_name = f"{main_name}%"
             main_value = main_value.replace('422', '22')
@@ -196,7 +193,7 @@ def parse_region_text(name, text):
                     
                 stat_name, stat_value = parts
                 name = clean_stat_name(stat_name, stat_value)
-                name = validate_stat(name, SUB_STATS.keys())
+                name = validate_stat(name, data.SUB_STATS.keys())
                 value = validate_value(stat_value, name)
                 substats.append({"name": name, "value": value})
             
@@ -232,21 +229,21 @@ def determine_element(image, filter_elements):
     """
     # Handle both string (echo_name) and list (candidate elements) inputs
     if isinstance(filter_elements, str):
-        # Legacy behavior: filter by echo name
+        # Filter by echo name
         base_name = filter_elements.replace("Phantom ", "") if filter_elements.startswith("Phantom ") else filter_elements
-        possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
+        possible_elements = data.ECHO_ELEMENTS.get(base_name, ["Unknown"])
     else:
-        # New behavior: use provided element list
+        # Else provided element list
         possible_elements = filter_elements if filter_elements else ["Unknown"]
 
-    kp1, des1 = _SIFT.detectAndCompute(image, None)
+    kp1, des1 = data._SIFT.detectAndCompute(image, None)
     if des1 is None:
         return "Unknown"
 
     matches = []
-    for name, (kp2, des2) in ELEMENT_FEATURES.items():
+    for name, (kp2, des2) in data.ELEMENT_FEATURES.items():
         if name in possible_elements:
-            matches_list = _FLANN.knnMatch(des1, des2, k=2)
+            matches_list = data._FLANN.knnMatch(des1, des2, k=2)
             good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
             confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
             matches.append((name, confidence))
@@ -256,7 +253,7 @@ def get_echo_cost(image: np.ndarray) -> int:
     """Get echo cost from image region"""
     cost_img = image[9:61, 302:345]
     
-    result, _ = Rapid(cost_img)
+    result, _ = data.Rapid(cost_img)
     if result:
         raw_cost = result[0][1]
         cost_mapping = {
@@ -336,28 +333,40 @@ def analyze_nightmare_indicators(img: np.ndarray) -> dict:
         "nightmare_score": nightmare_score
     }
 
-# Precompute nightmare scores for all templates (one-time cost at import)
+# Precompute nightmare scores for all templates
 TEMPLATE_NIGHTMARE_SCORES = {
     name: analyze_nightmare_indicators(img)
-    for name, img in ICON_TEMPLATES.items()
+    for name, img in data.ICON_TEMPLATES.items()
 }
+
+# Cache nightmare template IDs once to avoid repeated data.ECHO_NAME_MAP string checks.
+NIGHTMARE_TEMPLATE_IDS = {
+    template_id
+    for template_id, display_name in data.ECHO_NAME_MAP.items()
+    if display_name and "Nightmare" in display_name
+}
+
+def is_nightmare_template(template_name: str) -> bool:
+    """Return True if template ID/name represents a nightmare variant."""
+    return template_name in NIGHTMARE_TEMPLATE_IDS or "Nightmare" in template_name
 
 def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
     """Enhanced color comparison focusing on nightmare vs normal detection"""
-    if template_name not in ICON_TEMPLATES:
+    if template_name not in data.ICON_TEMPLATES:
         return 0.0
 
     icon_analysis = analyze_nightmare_indicators(icon_img)
     template_analysis = TEMPLATE_NIGHTMARE_SCORES.get(
-        template_name, analyze_nightmare_indicators(ICON_TEMPLATES[template_name])
+        template_name, analyze_nightmare_indicators(data.ICON_TEMPLATES[template_name])
     )
 
-    is_nightmare_template = "Nightmare" in ECHO_NAME_MAP.get(template_name, "")
+    # Template keys are IDs; check the mapped echo name to detect nightmare variants.
+    is_nightmare = is_nightmare_template(template_name)
 
     score_diff = abs(icon_analysis["nightmare_score"] - template_analysis["nightmare_score"])
     score_similarity = max(0.0, 1.0 - score_diff / 3.0)
 
-    if is_nightmare_template:
+    if is_nightmare:
         if icon_analysis["nightmare_score"] >= 2.0:
             score_similarity += 0.3
         else:
@@ -379,9 +388,9 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
         hist_icon = cv2.normalize(hist_icon, hist_icon).flatten()
 
         # Use precomputed template histogram
-        hist_template = TEMPLATE_HISTOGRAMS.get(template_name)
+        hist_template = data.TEMPLATE_HISTOGRAMS.get(template_name)
         if hist_template is None:
-            template_img = ICON_TEMPLATES[template_name]
+            template_img = data.ICON_TEMPLATES[template_name]
             template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
             hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
             hist_template = cv2.normalize(hist_template, hist_template).flatten()
@@ -396,7 +405,7 @@ def get_phash_ranked(icon_img: np.ndarray) -> list:
     """Return all template names sorted by pHash distance (closest first)"""
     pil = Image.fromarray(cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB))
     h = imagehash.phash(pil, hash_size=16)
-    dists = [(name, h - th) for name, th in TEMPLATE_PHASHES.items()]
+    dists = [(name, h - th) for name, th in data.TEMPLATE_PHASHES.items()]
     dists.sort(key=lambda x: x[1])
     return [name for name, _ in dists]
 
@@ -416,10 +425,10 @@ def sift_rank(icon_features: tuple, candidates: list) -> list:
         return []
     results = []
     for name in candidates:
-        if name not in TEMPLATE_FEATURES:
+        if name not in data.TEMPLATE_FEATURES:
             continue
-        kp2, des2 = TEMPLATE_FEATURES[name]
-        matches_list = _FLANN.knnMatch(des1, des2, k=2)
+        kp2, des2 = data.TEMPLATE_FEATURES[name]
+        matches_list = data._FLANN.knnMatch(des1, des2, k=2)
         good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
         confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
         results.append((name, confidence))
@@ -437,11 +446,14 @@ def disambiguate_by_element(image: np.ndarray, ranked: list) -> tuple:
     close_matches = [(n, c) for n, c in ranked if c > 0.1]
 
     # Filter multiple nightmare variants to keep only the strongest
-    nightmare_matches = [m for m in close_matches if "Nightmare" in ECHO_NAME_MAP.get(m[0], "")]
+    nightmare_matches = [m for m in close_matches if is_nightmare_template(m[0])]
     if len(nightmare_matches) >= 2:
         print("Multiple nightmare variants detected, filtering weaker nightmare")
         best_nightmare = max(nightmare_matches, key=lambda x: x[1])
-        close_matches = [m for m in close_matches if "Nightmare" not in ECHO_NAME_MAP.get(m[0], "") or m == best_nightmare]
+        close_matches = [
+            m for m in close_matches
+            if not is_nightmare_template(m[0]) or m == best_nightmare
+        ]
 
     if len(close_matches) < 2:
         return ranked, None
@@ -452,18 +464,18 @@ def disambiguate_by_element(image: np.ndarray, ranked: list) -> tuple:
     element_region = get_element_region(image)
     candidate_elements = set()
     for name, _ in close_matches:
-        candidate_elements.update(ECHO_ELEMENTS.get(name, []))
+        candidate_elements.update(data.ECHO_ELEMENTS.get(name, []))
 
     detected_element = determine_element(element_region, list(candidate_elements))
 
     element_matches = []
     for name, conf in close_matches:
-        if detected_element in ECHO_ELEMENTS.get(name, ["Unknown"]):
+        if detected_element in data.ECHO_ELEMENTS.get(name, ["Unknown"]):
             element_matches.append((name, conf))
 
     if len(element_matches) == 1:
         winner = element_matches[0]
-        print(f"→ Matched {detected_element} → '{winner[0]}'")
+        print(f"-> Matched {detected_element} -> '{winner[0]}'")
         rest = [(n, c) for n, c in ranked if n != winner[0]]
         return [winner] + rest, detected_element
 
@@ -480,7 +492,7 @@ def disambiguate_by_color(icon_img: np.ndarray, ranked: list) -> list:
     best_color = max(color_scores, key=lambda x: x[1])
 
     if best_color[0] != ranked[0][0]:
-        print(f"→ Color-based: {ranked[0][0]} -> {best_color[0]}")
+        print(f"-> Color-based: {ranked[0][0]} -> {best_color[0]}")
         winner_conf = next((c for n, c in ranked if n == best_color[0]), ranked[0][1])
         rest = [(n, c) for n, c in ranked if n != best_color[0]]
         return [(best_color[0], winner_conf)] + rest
@@ -497,11 +509,11 @@ def disambiguate_by_cost(image: np.ndarray, ranked: list) -> list:
         return ranked
 
     best_name = ranked[0][0]
-    if ECHO_COSTS.get(best_name, 0) == actual_cost:
+    if data.ECHO_COSTS.get(best_name, 0) == actual_cost:
         return ranked
 
     for name, conf in ranked[1:5]:
-        if conf > 0.1 and ECHO_COSTS.get(name, 0) == actual_cost:
+        if conf > 0.1 and data.ECHO_COSTS.get(name, 0) == actual_cost:
             print(f"Cost-based selection: {name} (matches cost {actual_cost})")
             rest = [(n, c) for n, c in ranked if n != name]
             return [(name, conf)] + rest
@@ -509,22 +521,83 @@ def disambiguate_by_cost(image: np.ndarray, ranked: list) -> list:
     return ranked
 
 
-def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray,
-                        ranked: list) -> Tuple[list, str | None]:
-    """Run the element → color → cost disambiguation chain.
-    Returns (reranked_list, detected_element_or_None)."""
+def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -> Tuple[str, float, str | None]:
+    """Apply rewrite-equivalent element/color/cost tiebreak logic.
+
+    Returns:
+        (best_name, best_confidence, detected_element_or_none)
+    """
+    if not ranked:
+        return ("Unknown", 0.0, None)
+
+    best_match, best_conf = ranked[0]
     detected_element = None
+    secondary_matches = [m for m in ranked[1:5] if m[1] > 0.1]
 
-    if needs_tiebreak(ranked, threshold=0.10):
-        ranked, detected_element = disambiguate_by_element(image, ranked)
+    if len(ranked) > 1 and (best_conf - ranked[1][1]) < 0.1:
+        close_matches = [(name, conf) for name, conf in ranked if conf > 0.1]
 
-    if needs_tiebreak(ranked, threshold=0.10):
-        ranked = disambiguate_by_color(icon_img, ranked)
+        nightmare_count = sum(1 for name, _ in close_matches if is_nightmare_template(name))
+        if nightmare_count >= 2:
+            print("Multiple nightmare variants detected, filtering weaker nightmare")
+            best_nightmare = max(
+                [m for m in close_matches if is_nightmare_template(m[0])],
+                key=lambda x: x[1],
+            )
+            close_matches = [
+                m for m in close_matches
+                if not is_nightmare_template(m[0]) or m == best_nightmare
+            ]
 
-    if needs_tiebreak(ranked, threshold=0.25):
-        ranked = disambiguate_by_cost(image, ranked)
+        if len(close_matches) >= 2:
+            close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
+            print(f"Close matches detected: {close_scores}")
 
-    return ranked, detected_element
+            element_region = get_element_region(image)
+            candidate_elements = set()
+            for name, _ in close_matches:
+                candidate_elements.update(data.ECHO_ELEMENTS.get(name, []))
+
+            detected_element = determine_element(element_region, list(candidate_elements))
+
+            element_matches = []
+            for name, conf in close_matches:
+                possible_elements = data.ECHO_ELEMENTS.get(name, ["Unknown"])
+                if detected_element in possible_elements:
+                    element_matches.append((name, conf))
+
+            if len(element_matches) == 1:
+                best_match, best_conf = element_matches[0]
+                print(f"-> Matched {detected_element} -> '{best_match}'")
+            else:
+                color_scores = []
+                for name, _ in close_matches:
+                    color_score = compare_icon_colors(icon_img, name)
+                    color_scores.append((name, color_score))
+
+                best_color_match = max(color_scores, key=lambda x: x[1])
+                if best_color_match[0] != best_match:
+                    print(f"-> Color-based: {best_match} -> {best_color_match[0]}")
+                    best_match = best_color_match[0]
+                    for name, conf in ranked:
+                        if name == best_match:
+                            best_conf = conf
+                            break
+
+    if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
+        actual_cost = get_echo_cost(image)
+        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}")
+        if actual_cost in [1, 3, 4]:
+            best_cost = data.ECHO_COSTS.get(best_match, 0)
+            if best_cost != actual_cost:
+                for name, conf in secondary_matches:
+                    if data.ECHO_COSTS.get(name, 0) == actual_cost:
+                        print(f"-> Cost-based selection: {name} (matches cost {actual_cost})")
+                        best_match = name
+                        best_conf = conf
+                        break
+
+    return best_match, best_conf, detected_element
 
 
 # Confidence below this triggers expanding the candidate pool
@@ -543,14 +616,13 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
         Tuple of (echo_name, confidence, element)
     """
     icon_img = image[0:182, 0:188]
-    icon_features = _SIFT.detectAndCompute(icon_img, None)
+    icon_features = data._SIFT.detectAndCompute(icon_img, None)
 
     # All candidates sorted by pHash distance (closest first)
     all_candidates = get_phash_ranked(icon_img)
     total = len(all_candidates)
 
     ranked = []
-    detected_element = None
     prev_k = 0
     k = _INITIAL_K
 
@@ -566,9 +638,8 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
             k *= 2
             continue
 
-        ranked, detected_element = _run_disambiguation(image, icon_img, ranked)
-
-        if ranked[0][1] >= _LOW_CONF_THRESHOLD or k >= total:
+        top_gap = (ranked[0][1] - ranked[1][1]) if len(ranked) > 1 else 1.0
+        if (ranked[0][1] >= _LOW_CONF_THRESHOLD and top_gap >= 0.10) or k >= total:
             break
 
         print(f"Low confidence {ranked[0][1]:.2%} after {k} candidates, expanding to {min(k * 2, total)}")
@@ -578,7 +649,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     if not ranked:
         return ("Unknown", 0.0, "Unknown")
 
-    best_name, best_conf = ranked[0]
+    best_name, best_conf, detected_element = _run_disambiguation(image, icon_img, ranked)
 
     # Confirmatory element detection
     if detected_element is None:
@@ -653,7 +724,7 @@ def _ocr_subs_single_pass(image: np.ndarray) -> str | None:
         ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_values"]["y2"],
         ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]
     ]
-    result, _ = Rapid(subs_region)
+    result, _ = data.Rapid(subs_region)
 
     if not result or len(result) < 5:
         return None
@@ -689,11 +760,11 @@ def _ocr_subs_legacy(image: np.ndarray) -> str:
     names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
 
     if len(names_lines) < 5:
-        rapid_result, _ = Rapid(names_img)
+        rapid_result, _ = data.Rapid(names_img)
         names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
 
     if len(tess_values) != 5:
-        rapid_result, _ = Rapid(values_img)
+        rapid_result, _ = data.Rapid(values_img)
         values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
     else:
         values_lines = tess_values
@@ -778,7 +849,7 @@ def process_card(image, region: str):
             return {
                 "success": True,
                 "analysis": {
-                    "name": {"name": ECHO_NAME_MAP.get(name, name), "id": name, "confidence": float(confidence)},
+                    "name": {"name": data.ECHO_NAME_MAP.get(name, name), "id": name, "confidence": float(confidence)},
                     "main": echo_data.get("main", {}),
                     "substats": echo_data.get("substats", []),
                     "element": element_data
@@ -806,3 +877,4 @@ def process_card(image, region: str):
     finally:
         # Ensure stdout is always restored
         sys.stdout = original_stdout
+
