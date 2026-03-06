@@ -392,7 +392,7 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
 
     return max(0.0, min(1.0, similarity_score))
 
-def get_sift_candidates(icon_img: np.ndarray, top_k: int = 15) -> list:
+def get_sift_candidates(icon_img: np.ndarray, top_k: int = 30) -> list:
     """Sub-millisecond pHash pre-filter to reduce SIFT search space"""
     pil = Image.fromarray(cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB))
     h = imagehash.phash(pil, hash_size=16)
@@ -508,7 +508,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
     icon_img = image[0:182, 0:188]
 
     # Phase 1: pHash pre-filter + SIFT ranking
-    candidates = get_sift_candidates(icon_img, top_k=15)
+    candidates = get_sift_candidates(icon_img)
     ranked = sift_rank(icon_img, candidates)
 
     if not ranked:
@@ -667,18 +667,12 @@ def _ocr_subs_legacy(image: np.ndarray) -> str:
 
 
 def ocr_echo_stats(image: np.ndarray) -> str:
-    """OCR echo stats: tries single-pass RapidOCR first, falls back to legacy multi-crop.
+    """OCR echo stats using proven multi-crop approach.
 
     Returns merged text: "main_name main_value\\nsub1_name sub1_value\\n..."
     """
     main_text = _ocr_main_stat(image)
-
-    # Try single-pass RapidOCR (faster, 1 call instead of 3-6)
-    subs_text = _ocr_subs_single_pass(image)
-
-    if subs_text is None:
-        # Fallback to proven multi-crop approach
-        subs_text = _ocr_subs_legacy(image)
+    subs_text = _ocr_subs_legacy(image)
 
     return f"{main_text}\n{subs_text}"
 
