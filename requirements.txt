@@ -9,4 +9,5 @@ pytesseract
 pydantic
 rapidfuzz
 rapidocr-onnxruntime
+imagehash
 python-dotenv

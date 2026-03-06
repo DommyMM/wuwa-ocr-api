@@ -3,10 +3,16 @@ import json
 import cv2
 import numpy as np
 from typing import Dict, List, Set
-from cv2 import SIFT_create
+from cv2 import SIFT_create, FlannBasedMatcher
 from rapidocr_onnxruntime import RapidOCR
+import imagehash
+from PIL import Image
 
 Rapid = RapidOCR(lang='en')
+
+# Cached CV instances — created once, reused across all calls
+_SIFT = SIFT_create()
+_FLANN = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
@@ -25,6 +31,8 @@ ICON_TEMPLATES: Dict[str, np.ndarray] = {}
 TEMPLATE_FEATURES = {}
 ELEMENT_TEMPLATES: Dict[str, np.ndarray] = {}
 ELEMENT_FEATURES = {}
+TEMPLATE_PHASHES: Dict = {}
+TEMPLATE_HISTOGRAMS: Dict[str, np.ndarray] = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
@@ -72,8 +80,6 @@ def _load_from_local():
 
 def load_templates(folder: str, templates: dict, features: dict, target_size: tuple = None) -> int:
     count = 0
-    sift = SIFT_create()
-
     for icon_path in (DATA_DIR / folder).glob('*.png'):
         try:
             img = cv2.imread(str(icon_path))
@@ -85,7 +91,7 @@ def load_templates(folder: str, templates: dict, features: dict, target_size: tu
                 img = cv2.resize(img, target_size)
             templates[icon_path.stem] = img
 
-            kp, des = sift.detectAndCompute(img, None)
+            kp, des = _SIFT.detectAndCompute(img, None)
             if des is not None:
                 features[icon_path.stem] = (kp, des)
                 count += 1
@@ -121,6 +127,19 @@ try:
     echo_count = load_templates('Echoes', ICON_TEMPLATES, TEMPLATE_FEATURES, (188, 188))
     element_count = load_templates('Elements', ELEMENT_TEMPLATES, ELEMENT_FEATURES)
     print(f"Loaded {echo_count} echo templates and {element_count} element templates")
+
+    # Precompute pHash for each echo template (~0.5s one-time, ~6KB RAM)
+    for name, img in ICON_TEMPLATES.items():
+        pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        TEMPLATE_PHASHES[name] = imagehash.phash(pil, hash_size=16)
+    print(f"Precomputed {len(TEMPLATE_PHASHES)} pHash values")
+
+    # Precompute HSV histograms for color comparison
+    for name, img in ICON_TEMPLATES.items():
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hist = cv2.calcHist([hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+        TEMPLATE_HISTOGRAMS[name] = cv2.normalize(hist, hist).flatten()
+    print(f"Precomputed {len(TEMPLATE_HISTOGRAMS)} template histograms")
 
 except Exception as e:
     print(f"Critical error during initialization: {e}")

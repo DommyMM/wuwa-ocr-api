@@ -1,11 +1,15 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
+from data import (CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP,
+                  MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP,
+                  TEMPLATE_FEATURES, ELEMENT_FEATURES, ICON_TEMPLATES,
+                  TEMPLATE_PHASHES, TEMPLATE_HISTOGRAMS, _SIFT, _FLANN, Rapid)
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
-from cv2 import SIFT_create, FlannBasedMatcher
+import imagehash
+from PIL import Image
 import io
 import sys
 
@@ -235,17 +239,14 @@ def determine_element(image, filter_elements):
         # New behavior: use provided element list
         possible_elements = filter_elements if filter_elements else ["Unknown"]
 
-    sift = SIFT_create()
-    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-
-    kp1, des1 = sift.detectAndCompute(image, None)
+    kp1, des1 = _SIFT.detectAndCompute(image, None)
     if des1 is None:
         return "Unknown"
 
     matches = []
     for name, (kp2, des2) in ELEMENT_FEATURES.items():
         if name in possible_elements:
-            matches_list = flann.knnMatch(des1, des2, k=2)
+            matches_list = _FLANN.knnMatch(des1, des2, k=2)
             good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
             confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
             matches.append((name, confidence))
@@ -335,55 +336,55 @@ def analyze_nightmare_indicators(img: np.ndarray) -> dict:
         "nightmare_score": nightmare_score
     }
 
+# Precompute nightmare scores for all templates (one-time cost at import)
+TEMPLATE_NIGHTMARE_SCORES = {
+    name: analyze_nightmare_indicators(img)
+    for name, img in ICON_TEMPLATES.items()
+}
+
 def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
     """Enhanced color comparison focusing on nightmare vs normal detection"""
-    from data import ICON_TEMPLATES
-
     if template_name not in ICON_TEMPLATES:
         return 0.0
 
-    template_img = ICON_TEMPLATES[template_name]
-
-    # Analyze both images for nightmare indicators
     icon_analysis = analyze_nightmare_indicators(icon_img)
-    template_analysis = analyze_nightmare_indicators(template_img)
+    template_analysis = TEMPLATE_NIGHTMARE_SCORES.get(
+        template_name, analyze_nightmare_indicators(ICON_TEMPLATES[template_name])
+    )
 
-    # Check if this is a nightmare vs normal comparison
-    is_nightmare_template = "Nightmare" in template_name
+    is_nightmare_template = "Nightmare" in ECHO_NAME_MAP.get(template_name, "")
 
-    # Calculate score similarity based on nightmare score matching
     score_diff = abs(icon_analysis["nightmare_score"] - template_analysis["nightmare_score"])
-    score_similarity = max(0.0, 1.0 - score_diff / 3.0)  # Normalize by max possible difference
+    score_similarity = max(0.0, 1.0 - score_diff / 3.0)
 
     if is_nightmare_template:
-        # For nightmare templates, icon should also show nightmare characteristics
         if icon_analysis["nightmare_score"] >= 2.0:
-            score_similarity += 0.3  # Strong bonus for matching nightmare characteristics
+            score_similarity += 0.3
         else:
-            score_similarity *= 0.3  # Strong penalty for normal image vs nightmare template
+            score_similarity *= 0.3
 
-        # Additional saturation/vibrancy matching for nightmare variants
         sat_diff = abs(icon_analysis["avg_saturation"] - template_analysis["avg_saturation"]) / 255.0
         vib_diff = abs(icon_analysis["vibrancy_score"] - template_analysis["vibrancy_score"]) / 100.0
 
         similarity_score = (score_similarity * 0.7 + (1.0 - sat_diff) * 0.15 + (1.0 - vib_diff) * 0.15)
 
     else:
-        # For normal templates, icon should NOT show strong nightmare characteristics
         if icon_analysis["nightmare_score"] < 2.0:
-            score_similarity += 0.3  # Bonus for matching normal characteristics
+            score_similarity += 0.3
         else:
-            score_similarity *= 0.3  # Penalty for nightmare image vs normal template
+            score_similarity *= 0.3
 
-        # Traditional color histogram comparison for normal variants
         icon_hsv = cv2.cvtColor(icon_img, cv2.COLOR_BGR2HSV)
-        template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
-
         hist_icon = cv2.calcHist([icon_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
-        hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
-
         hist_icon = cv2.normalize(hist_icon, hist_icon).flatten()
-        hist_template = cv2.normalize(hist_template, hist_template).flatten()
+
+        # Use precomputed template histogram
+        hist_template = TEMPLATE_HISTOGRAMS.get(template_name)
+        if hist_template is None:
+            template_img = ICON_TEMPLATES[template_name]
+            template_hsv = cv2.cvtColor(template_img, cv2.COLOR_BGR2HSV)
+            hist_template = cv2.calcHist([template_hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
+            hist_template = cv2.normalize(hist_template, hist_template).flatten()
 
         hist_correlation = cv2.compareHist(hist_icon, hist_template, cv2.HISTCMP_CORREL)
 
@@ -391,109 +392,148 @@ def compare_icon_colors(icon_img: np.ndarray, template_name: str) -> float:
 
     return max(0.0, min(1.0, similarity_score))
 
+def get_sift_candidates(icon_img: np.ndarray, top_k: int = 15) -> list:
+    """Sub-millisecond pHash pre-filter to reduce SIFT search space"""
+    pil = Image.fromarray(cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB))
+    h = imagehash.phash(pil, hash_size=16)
+    dists = [(name, h - th) for name, th in TEMPLATE_PHASHES.items()]
+    dists.sort(key=lambda x: x[1])
+    return [name for name, _ in dists[:top_k]]
+
+
+def sift_rank(icon_img: np.ndarray, candidates: list) -> list:
+    """SIFT match icon against candidate templates, return sorted by confidence"""
+    kp1, des1 = _SIFT.detectAndCompute(icon_img, None)
+    results = []
+    for name in candidates:
+        if name not in TEMPLATE_FEATURES:
+            continue
+        kp2, des2 = TEMPLATE_FEATURES[name]
+        matches_list = _FLANN.knnMatch(des1, des2, k=2)
+        good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
+        confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
+        results.append((name, confidence))
+    return sorted(results, key=lambda x: x[1], reverse=True)
+
+
+def needs_tiebreak(ranked: list, threshold: float) -> bool:
+    """Check if top two matches are within threshold gap"""
+    return len(ranked) > 1 and (ranked[0][1] - ranked[1][1]) < threshold
+
+
+def disambiguate_by_element(image: np.ndarray, ranked: list) -> tuple:
+    """Try to resolve ties using element detection.
+    Returns (reranked_list, detected_element)"""
+    close_matches = [(n, c) for n, c in ranked if c > 0.1]
+
+    # Filter multiple nightmare variants to keep only the strongest
+    nightmare_matches = [m for m in close_matches if "Nightmare" in ECHO_NAME_MAP.get(m[0], "")]
+    if len(nightmare_matches) >= 2:
+        print("Multiple nightmare variants detected, filtering weaker nightmare")
+        best_nightmare = max(nightmare_matches, key=lambda x: x[1])
+        close_matches = [m for m in close_matches if "Nightmare" not in ECHO_NAME_MAP.get(m[0], "") or m == best_nightmare]
+
+    if len(close_matches) < 2:
+        return ranked, None
+
+    close_scores = [(n, f"{c:.4f}") for n, c in close_matches]
+    print(f"Close matches detected: {close_scores}")
+
+    element_region = get_element_region(image)
+    candidate_elements = set()
+    for name, _ in close_matches:
+        candidate_elements.update(ECHO_ELEMENTS.get(name, []))
+
+    detected_element = determine_element(element_region, list(candidate_elements))
+
+    element_matches = []
+    for name, conf in close_matches:
+        if detected_element in ECHO_ELEMENTS.get(name, ["Unknown"]):
+            element_matches.append((name, conf))
+
+    if len(element_matches) == 1:
+        winner = element_matches[0]
+        print(f"→ Matched {detected_element} → '{winner[0]}'")
+        rest = [(n, c) for n, c in ranked if n != winner[0]]
+        return [winner] + rest, detected_element
+
+    return ranked, detected_element
+
+
+def disambiguate_by_color(icon_img: np.ndarray, ranked: list) -> list:
+    """Resolve ties using color/vibrancy comparison"""
+    close_matches = [(n, c) for n, c in ranked if c > 0.1]
+    if len(close_matches) < 2:
+        return ranked
+
+    color_scores = [(name, compare_icon_colors(icon_img, name)) for name, _ in close_matches]
+    best_color = max(color_scores, key=lambda x: x[1])
+
+    if best_color[0] != ranked[0][0]:
+        print(f"→ Color-based: {ranked[0][0]} -> {best_color[0]}")
+        winner_conf = next((c for n, c in ranked if n == best_color[0]), ranked[0][1])
+        rest = [(n, c) for n, c in ranked if n != best_color[0]]
+        return [(best_color[0], winner_conf)] + rest
+
+    return ranked
+
+
+def disambiguate_by_cost(image: np.ndarray, ranked: list) -> list:
+    """Resolve ties using cost OCR"""
+    actual_cost = get_echo_cost(image)
+    print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}")
+
+    if actual_cost not in [1, 3, 4]:
+        return ranked
+
+    best_name = ranked[0][0]
+    if ECHO_COSTS.get(best_name, 0) == actual_cost:
+        return ranked
+
+    for name, conf in ranked[1:5]:
+        if conf > 0.1 and ECHO_COSTS.get(name, 0) == actual_cost:
+            print(f"Cost-based selection: {name} (matches cost {actual_cost})")
+            rest = [(n, c) for n, c in ranked if n != name]
+            return [(name, conf)] + rest
+
+    return ranked
+
+
 def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
-    """SIFT-based icon matching - returns best match with confidence check and element
+    """SIFT-based icon matching with pHash pre-filter and disambiguation chain.
 
     Returns:
         Tuple of (echo_name, confidence, element)
     """
     icon_img = image[0:182, 0:188]
-    sift = SIFT_create()
-    kp1, des1 = sift.detectAndCompute(icon_img, None)
-    matches = []
-    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
 
-    detected_element = None  # Initialize to avoid duplicate element detection
+    # Phase 1: pHash pre-filter + SIFT ranking
+    candidates = get_sift_candidates(icon_img, top_k=15)
+    ranked = sift_rank(icon_img, candidates)
 
-    for name, (kp2, des2) in TEMPLATE_FEATURES.items():
-        matches_list = flann.knnMatch(des1, des2, k=2)
-        good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
-        confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
-        matches.append((name, confidence))
+    if not ranked:
+        return ("Unknown", 0.0, "Unknown")
 
-    sorted_matches = sorted(matches, key=lambda x: x[1], reverse=True)
-    best_match, best_conf = sorted_matches[0]
-    secondary_matches = [m for m in sorted_matches[1:5] if m[1] > 0.1]
-    
-    # Use color comparison when top matches are close (old logic) + minimum confidence filter
-    if len(sorted_matches) > 1 and (best_conf - sorted_matches[1][1]) < 0.1:
-        # Lowkey no idea why I chose 10% but 15% was too high so yeah
-        close_matches = [(name, conf) for name, conf in sorted_matches
-                        if conf > 0.1]
+    detected_element = None
 
-        # If we have multiple nightmare variants, something's wrong - filter out the weaker nightmare
-        nightmare_count = sum(1 for name, conf in close_matches if "Nightmare" in name)
-        if nightmare_count >= 2:
-            print(f"Multiple nightmare variants detected, filtering weaker nightmare")
-            # Keep the strongest nightmare and remove other nightmares
-            best_nightmare = max([m for m in close_matches if "Nightmare" in m[0]], key=lambda x: x[1])
-            close_matches = [m for m in close_matches if "Nightmare" not in m[0] or m == best_nightmare]
+    # Phase 2: Disambiguation (only if needed)
+    if needs_tiebreak(ranked, threshold=0.10):
+        ranked, detected_element = disambiguate_by_element(image, ranked)
 
-        if len(close_matches) >= 2:  # Only if there are actually multiple decent close matches
-            close_scores = [(name, f"{conf:.4f}") for name, conf in close_matches]
-            print(f"Close matches detected: {close_scores}")
+    if needs_tiebreak(ranked, threshold=0.10):
+        ranked = disambiguate_by_color(icon_img, ranked)
 
-            # Detect element for disambiguation
-            element_region = get_element_region(image)
+    if needs_tiebreak(ranked, threshold=0.25):
+        ranked = disambiguate_by_cost(image, ranked)
 
-            # Get union of all possible elements for candidates
-            candidate_elements = set()
-            for name, _ in close_matches:
-                candidate_elements.update(ECHO_ELEMENTS.get(name, []))
+    best_name, best_conf = ranked[0]
 
-            # Match against candidate elements only
-            detected_element = determine_element(element_region, list(candidate_elements))
-
-            # Check which candidates match the detected element
-            element_matches = []
-            for name, conf in close_matches:
-                possible_elements = ECHO_ELEMENTS.get(name, ["Unknown"])
-                if detected_element in possible_elements:
-                    element_matches.append((name, conf))
-
-            # USE ELEMENT AS PRIMARY TIEBREAKER
-            if len(element_matches) == 1:
-                # Element clearly identifies ONE candidate - trust it!
-                best_match = element_matches[0][0]
-                best_conf = element_matches[0][1]
-                print(f"→ Matched {detected_element} → '{best_match}'")
-            else:
-                # Element doesn't help (matches multiple or none) - fall back to color
-                icon_img = image[0:182, 0:188]
-                color_scores = []
-                for name, conf in close_matches:
-                    color_score = compare_icon_colors(icon_img, name)
-                    color_scores.append((name, color_score))
-
-                # Pick the best color match
-                best_color_match = max(color_scores, key=lambda x: x[1])
-                if best_color_match[0] != best_match:
-                    print(f"→ Color-based: {best_match} -> {best_color_match[0]}")
-                    best_match = best_color_match[0]
-                    for name, conf in sorted_matches:
-                        if name == best_match:
-                            best_conf = conf
-                            break
-    
-    if secondary_matches and (best_conf - secondary_matches[0][1]) < 0.25:
-        actual_cost = get_echo_cost(image)
-        print(f"Close match detected, using cost disambiguation. Actual cost: {actual_cost}")
-        if actual_cost in [1, 3, 4]:
-            best_cost = ECHO_COSTS.get(best_match, 0)
-            if best_cost != actual_cost:
-                for name, conf in secondary_matches:
-                    if ECHO_COSTS.get(name, 0) == actual_cost:
-                        print(f"Cost-based selection: {name} (matches cost {actual_cost})")
-                        best_match = name
-                        best_conf = conf
-                        break
-
-    # Only detect element if we haven't already
+    # Phase 3: Confirmatory element detection
     if detected_element is None:
         element_region = get_element_region(image)
-        detected_element = determine_element(element_region, best_match)
+        detected_element = determine_element(element_region, best_name)
 
-    return (best_match, best_conf, detected_element)
+    return (best_name, best_conf, detected_element)
 
 def parse_sequence_region(image) -> int:
     """Count active sequence nodes using HSV gray detection"""
@@ -529,6 +569,119 @@ def merge_stat_lines(names: list, values: list) -> str:
     """Merge stat names with their values"""
     return "\n".join(f"{name} {value}" for name, value in zip(names, values))
 
+
+def _ocr_main_stat(image: np.ndarray) -> str:
+    """OCR main stat line using Tesseract"""
+    main_img = image[ECHO_REGIONS["main"]["y1"]:ECHO_REGIONS["main"]["y2"],
+                     ECHO_REGIONS["main"]["x1"]:ECHO_REGIONS["main"]["x2"]]
+    main_processed = preprocess_region(main_img)
+    main_lines = [l.strip() for l in pytesseract.image_to_string(main_processed).splitlines() if l.strip()]
+    return f"{main_lines[0]} {main_lines[1]}" if len(main_lines) >= 2 else ""
+
+
+def _group_by_y(results: list, y_threshold: int = 15) -> list:
+    """Group OCR results into lines by Y-coordinate proximity"""
+    if not results:
+        return []
+    lines = [[results[0]]]
+    for r in results[1:]:
+        y_curr = r[0][0][1]
+        y_prev = lines[-1][-1][0][0][1]
+        if abs(y_curr - y_prev) < y_threshold:
+            lines[-1].append(r)
+        else:
+            lines.append([r])
+    return lines
+
+
+def _ocr_subs_single_pass(image: np.ndarray) -> str | None:
+    """Try single-pass RapidOCR on full substat region.
+    Returns newline-separated sub lines, or None if insufficient results."""
+    subs_region = image[
+        ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_values"]["y2"],
+        ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]
+    ]
+    result, _ = Rapid(subs_region)
+
+    if not result or len(result) < 5:
+        return None
+
+    sorted_results = sorted(result, key=lambda r: r[0][0][1])
+    lines = _group_by_y(sorted_results)
+
+    if len(lines) < 5:
+        return None
+
+    sub_lines = []
+    for line in lines[:5]:
+        sorted_by_x = sorted(line, key=lambda r: r[0][0][0])
+        text = " ".join(r[1] for r in sorted_by_x)
+        sub_lines.append(text)
+
+    return "\n".join(sub_lines)
+
+
+def _ocr_subs_legacy(image: np.ndarray) -> str:
+    """Multi-crop Tesseract + RapidOCR fallback for substats (proven approach)"""
+    names_img = image[ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_names"]["y2"],
+                      ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_names"]["x2"]]
+    values_img = image[ECHO_REGIONS["subs_values"]["y1"]:ECHO_REGIONS["subs_values"]["y2"],
+                       ECHO_REGIONS["subs_values"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]]
+
+    names_processed = preprocess_region(names_img)
+    values_processed = preprocess_region(values_img)
+
+    names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
+    tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
+
+    names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
+
+    if len(names_lines) < 5:
+        rapid_result, _ = Rapid(names_img)
+        names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
+
+    if len(tess_values) != 5:
+        rapid_result, _ = Rapid(values_img)
+        values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
+    else:
+        values_lines = tess_values
+
+    # Process names - combine DMG lines
+    cleaned_names = []
+    for i, line in enumerate(names_lines):
+        if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
+            if line == "Bonus":
+                cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
+            elif line == "DMGBonus":
+                cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
+            else:
+                cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
+        else:
+            cleaned_line = line.strip()
+            if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
+                cleaned_line = f"{cleaned_line} Bonus"
+            cleaned_names.append(cleaned_line)
+
+    values = values_lines[:5]
+    return "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
+
+
+def ocr_echo_stats(image: np.ndarray) -> str:
+    """OCR echo stats: tries single-pass RapidOCR first, falls back to legacy multi-crop.
+
+    Returns merged text: "main_name main_value\\nsub1_name sub1_value\\n..."
+    """
+    main_text = _ocr_main_stat(image)
+
+    # Try single-pass RapidOCR (faster, 1 call instead of 3-6)
+    subs_text = _ocr_subs_single_pass(image)
+
+    if subs_text is None:
+        # Fallback to proven multi-crop approach
+        subs_text = _ocr_subs_legacy(image)
+
+    return f"{main_text}\n{subs_text}"
+
 def process_card(image, region: str):
     if image is None:
         return {"success": False, "error": "No image data provided"}
@@ -563,57 +716,7 @@ def process_card(image, region: str):
                 "analysis": forte_data
             }
         elif region.startswith("echo"):
-            # Process main region
-            main_img = image[ECHO_REGIONS["main"]["y1"]:ECHO_REGIONS["main"]["y2"], ECHO_REGIONS["main"]["x1"]:ECHO_REGIONS["main"]["x2"]]
-            main_processed = preprocess_region(main_img)
-            main_lines = [l.strip() for l in pytesseract.image_to_string(main_processed).splitlines() if l.strip()]
-            main_text = f"{main_lines[0]} {main_lines[1]}" if len(main_lines) >= 2 else ""
-            
-            # Process subs regions separately
-            names_img = image[ECHO_REGIONS["subs_names"]["y1"]:ECHO_REGIONS["subs_names"]["y2"], ECHO_REGIONS["subs_names"]["x1"]:ECHO_REGIONS["subs_names"]["x2"]]
-            values_img = image[ECHO_REGIONS["subs_values"]["y1"]:ECHO_REGIONS["subs_values"]["y2"], ECHO_REGIONS["subs_values"]["x1"]:ECHO_REGIONS["subs_values"]["x2"]]
-            
-            names_processed = preprocess_region(names_img)
-            values_processed = preprocess_region(values_img)
-            
-            # Get raw lines
-            names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
-            tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
-            
-            # First clean out invalid bonus lines
-            names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
-            
-            # Use Rapid if not exactly 5 entries
-            if len(names_lines) < 5:
-                rapid_result, _ = Rapid(names_img)
-                names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
-                
-            if len(tess_values) != 5:
-                rapid_result, _ = Rapid(values_img)
-                values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
-            else:
-                values_lines = tess_values
-            
-            # Process names - combine DMG lines
-            cleaned_names = []
-            for i, line in enumerate(names_lines):
-                # Combine if line is "Bonus", "DMGBonus", or starts with "DMG"
-                if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
-                    if line == "Bonus":
-                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
-                    elif line == "DMGBonus":
-                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
-                    else:  # starts with "DMG"
-                        cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
-                else:
-                    cleaned_line = line.strip()
-                    # Preserve old behavior: add "Bonus" to lines ending with "DMG" (except Crit)
-                    if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
-                        cleaned_line = f"{cleaned_line} Bonus"
-                    cleaned_names.append(cleaned_line)
-            values = values_lines[:5]
-            subs_text = "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
-            cleaned_text = f"{main_text}\n{subs_text}"
+            cleaned_text = ocr_echo_stats(image)
 
             name, confidence, element_data = match_icon(image)
             print(f"Echo identified: {name} (confidence: {confidence:.2%})")
