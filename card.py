@@ -603,17 +603,11 @@ def _run_disambiguation(image: np.ndarray, icon_img: np.ndarray, ranked: list) -
     return best_match, best_conf, detected_element
 
 
-# Confidence below this triggers expanding the candidate pool
-_LOW_CONF_THRESHOLD = 0.15
-_INITIAL_K = 30
-
-
 def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
-    """SIFT-based icon matching with pHash pre-filter and disambiguation chain.
+    """SIFT-based icon matching with pHash-ordered candidate scan.
 
-    Uses exponential search: tries top 30 pHash candidates first, then doubles
-    the pool (30→60→120→all) until confidence >= 15% or all templates checked.
-    Only SIFTs new candidates each round and merges with previous results.
+    For parity with rewrite decisions, all templates are SIFT-ranked.
+    pHash is used only to order candidate evaluation, not to early-stop.
 
     Returns:
         Tuple of (echo_name, confidence, element)
@@ -624,31 +618,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
 
     # All candidates sorted by pHash distance (closest first)
     all_candidates = get_phash_ranked(icon_img)
-    total = len(all_candidates)
-
-    ranked = []
-    prev_k = 0
-    k = _INITIAL_K
-
-    while prev_k < total:
-        k = min(k, total)
-        batch = all_candidates[prev_k:k]
-
-        new_ranked = sift_rank(icon_features, batch)
-        ranked = sorted(ranked + new_ranked, key=lambda x: x[1], reverse=True)
-
-        if not ranked:
-            prev_k = k
-            k *= 2
-            continue
-
-        top_gap = (ranked[0][1] - ranked[1][1]) if len(ranked) > 1 else 1.0
-        if (ranked[0][1] >= _LOW_CONF_THRESHOLD and top_gap >= 0.10) or k >= total:
-            break
-
-        print(f"Low confidence {ranked[0][1]:.2%} after {k} candidates, expanding to {min(k * 2, total)}")
-        prev_k = k
-        k *= 2
+    ranked = sift_rank(icon_features, all_candidates)
 
     if not ranked:
         return ("Unknown", 0.0, "Unknown")
