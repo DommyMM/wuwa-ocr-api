@@ -11,7 +11,6 @@ from PIL import Image
 import io
 import sys
 
-
 WEAPON_REGIONS = {
     "name": {"x1": 152, "y1": 25, "x2": 437, "y2": 79},
     "level": {"x1": 191, "y1": 79, "x2": 269, "y2": 133}
@@ -40,30 +39,29 @@ ECHO_REGIONS = {
     "subs_values": {"x1": 290, "y1": 228, "x2": 359, "y2": 400}
 }
 
-
 def process_ocr(name: str, image: np.ndarray) -> str:
     """Process image with appropriate OCR engine"""
     if name == "character":
-        # Parallel hybrid: Tesseract for name accuracy + data.Rapid for level detection
+        # Parallel hybrid: Tesseract for name accuracy + RapidOCR for level detection
         from concurrent.futures import ThreadPoolExecutor
 
         def run_tesseract():
             processed_image = preprocess_region(image)
             return pytesseract.image_to_string(processed_image, config='--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ')
 
-        def run_rapid():
+        def run_rapid_ocr():
             result, _ = data.run_rapid(image)
             return "\n".join(text for _, text, _ in result) if result else ""
 
         with ThreadPoolExecutor(max_workers=2) as executor:
             tess_future = executor.submit(run_tesseract)
-            rapid_future = executor.submit(run_rapid)
+            rapid_future = executor.submit(run_rapid_ocr)
             name_text = tess_future.result()
             rapid_text = rapid_future.result()
 
         return f"{name_text.strip()}\n{rapid_text.strip()}"
     elif name == "weapon":
-        # Keep data.Rapid OCR for weapons
+        # Keep RapidOCR for weapons
         result, _ = data.run_rapid(image)
         if result:
             return "\n".join(text for _, text, _ in result)
@@ -234,12 +232,12 @@ def determine_element(image, filter_elements):
         # Else provided element list
         possible_elements = filter_elements if filter_elements else ["Unknown"]
 
-    sift = data._make_sift()
+    sift = data.make_sift()
     kp1, des1 = sift.detectAndCompute(image, None)
     if des1 is None:
         return "Unknown"
 
-    flann = data._make_flann()
+    flann = data.make_flann()
     matches = []
     for name, (kp2, des2) in data.ELEMENT_FEATURES.items():
         if name in possible_elements:
@@ -427,7 +425,7 @@ def sift_rank(icon_features: tuple, candidates: list) -> list:
     kp1, des1 = icon_features
     if des1 is None:
         return []
-    flann = data._make_flann()
+    flann = data.make_flann()
     results = []
     for name in candidates:
         if name not in data.TEMPLATE_FEATURES:
@@ -621,7 +619,7 @@ def match_icon(image: np.ndarray) -> Tuple[str, float, str]:
         Tuple of (echo_name, confidence, element)
     """
     icon_img = image[0:182, 0:188]
-    sift = data._make_sift()
+    sift = data.make_sift()
     icon_features = sift.detectAndCompute(icon_img, None)
 
     # All candidates sorted by pHash distance (closest first)

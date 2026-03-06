@@ -3,30 +3,25 @@ import json
 import threading
 import cv2
 import numpy as np
-from typing import Dict, List, Set
-from cv2 import SIFT_create, FlannBasedMatcher
+from typing import Any, Callable, Dict, List, Set, Optional, Tuple
+from cv2 import FlannBasedMatcher
 from rapidocr_onnxruntime import RapidOCR
 import imagehash
 from PIL import Image
 
-# Legacy singleton kept for backward compatibility; prefer run_rapid for request paths.
-Rapid = RapidOCR(lang='en')
+_sift_ctor: Callable[[], Any] = getattr(cv2, "SIFT_create")
 _THREAD_LOCAL = threading.local()
-
-# Cached CV instances — created once, reused across all calls
-_SIFT = SIFT_create()
+# Shared matcher params; actual matcher instances are request-local.
 _FLANN_PARAMS = (dict(algorithm=1, trees=5), dict(checks=50))
 
-
-def _make_sift():
+def make_sift():
     """Create a fresh SIFT instance for request-local feature extraction."""
-    return SIFT_create()
+    return _sift_ctor()
 
-
-def _make_flann() -> FlannBasedMatcher:
+def make_flann() -> FlannBasedMatcher:
     """Create a fresh FLANN matcher instance for request-local matching."""
-    return FlannBasedMatcher(*_FLANN_PARAMS)
-
+    index_params, search_params = _FLANN_PARAMS
+    return FlannBasedMatcher(dict(index_params), dict(search_params))
 
 def run_rapid(image):
     """Run RapidOCR using a thread-local engine instance."""
@@ -100,8 +95,9 @@ def _load_from_local():
     print(f"Loaded local data: {len(CHARACTER_NAMES)} characters, {len(WEAPON_NAMES)} weapons, {len(ECHO_NAMES)} echoes")
 
 
-def load_templates(folder: str, templates: dict, features: dict, target_size: tuple = None) -> int:
+def load_templates(folder: str, templates: dict, features: dict, target_size: Optional[Tuple[int, int]] = None) -> int:
     count = 0
+    sift = make_sift()
     for icon_path in (DATA_DIR / folder).glob('*.png'):
         try:
             img = cv2.imread(str(icon_path))
@@ -113,7 +109,7 @@ def load_templates(folder: str, templates: dict, features: dict, target_size: tu
                 img = cv2.resize(img, target_size)
             templates[icon_path.stem] = img
 
-            kp, des = _SIFT.detectAndCompute(img, None)
+            kp, des = sift.detectAndCompute(img, None)
             if des is not None:
                 features[icon_path.stem] = (kp, des)
                 count += 1

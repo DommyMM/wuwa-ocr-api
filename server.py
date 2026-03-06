@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import base64
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
-from typing import Optional
+from typing import Optional, Any, cast
 from card import process_card
 import time
 from collections import defaultdict
@@ -23,8 +23,8 @@ consecutive_500s = 0
 MAX_CONSECUTIVE_500S = 3
 
 # Ensure output is flushed for Railway
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"): cast(Any, sys.stdout).reconfigure(line_buffering=True)
+if hasattr(sys.stderr, "reconfigure"): cast(Any, sys.stderr).reconfigure(line_buffering=True)
 
 def force_restart(reason: str):
     print(f"FORCING RESTART: {reason}", flush=True)
@@ -81,8 +81,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 def worker_init():
     """Ensure worker output is flushed."""
-    sys.stdout.reconfigure(line_buffering=True)
-    sys.stderr.reconfigure(line_buffering=True)
+    if hasattr(sys.stdout, "reconfigure"):
+        cast(Any, sys.stdout).reconfigure(line_buffering=True)
+    if hasattr(sys.stderr, "reconfigure"):
+        cast(Any, sys.stderr).reconfigure(line_buffering=True)
 
 executor = ProcessPoolExecutor(
     max_workers=MAX_WORKERS,
@@ -101,7 +103,7 @@ app.add_middleware(
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     if request.url.path == "/api/ocr":
-        client_ip = request.client.host
+        client_ip = request.client.host if request.client else "unknown"
         if not rate_limiter.is_allowed(client_ip):
             return JSONResponse(
                 status_code=429,
