@@ -13,14 +13,17 @@ from collections import defaultdict
 import os
 import asyncio
 from contextlib import asynccontextmanager
+import ipaddress
 import sys
 
 MAX_WORKERS = 8
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
+OCR_INTERNAL_KEY = os.getenv("OCR_INTERNAL_KEY", "").strip()
 consecutive_500s = 0
 MAX_CONSECUTIVE_500S = 3
+SUPPORTED_REGIONS = { "character", "weapon", "watermark", "forte", "sequences", "echo1", "echo2", "echo3", "echo4", "echo5" }
 
 # Ensure output is flushed for Railway
 if hasattr(sys.stdout, "reconfigure"): cast(Any, sys.stdout).reconfigure(line_buffering=True)
@@ -44,10 +47,39 @@ class RateLimiter:
             return True
         return False
 
+def normalize_ip(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+
+    candidate = value.split(",", 1)[0].strip()
+    if not candidate:
+        return None
+
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return None
+
+def is_trusted_proxy_request(request: Request) -> bool:
+    if not OCR_INTERNAL_KEY:
+        return False
+
+    return request.headers.get("x-ocr-internal-key", "").strip() == OCR_INTERNAL_KEY
+
+def get_rate_limit_identity(request: Request) -> str:
+    if is_trusted_proxy_request(request):
+        forwarded_ip = normalize_ip(request.headers.get("x-ocr-client-ip"))
+        if forwarded_ip:
+            return forwarded_ip
+
+    direct_ip = normalize_ip(request.client.host if request.client else None)
+    if direct_ip:
+        return direct_ip
+
+    return request.client.host if request.client and request.client.host else "unknown"
+
 class ImageRequest(BaseModel):
     image: str
-    region: Optional[str] = None
-    type: Optional[str] = None  # Legacy fallback ("import-<region>")
 
 class OCRResponse(BaseModel):
     success: bool
@@ -62,12 +94,11 @@ class APIStatus(BaseModel):
             "method": "POST",
             "request": {
                 "image": "string (base64 encoded image)",
-                "region": "string (optional body fallback)",
-                "type": "string (legacy fallback: 'import-<region>')"
             },
             "headers": {
-                "X-OCR-Region": "string (recommended region identifier)"
+                "X-OCR-Region": "string (required region identifier)"
             },
+            "supported_regions": sorted(SUPPORTED_REGIONS),
         }
     }
 
@@ -103,8 +134,8 @@ app.add_middleware(
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     if request.url.path == "/api/ocr":
-        client_ip = request.client.host if request.client else "unknown"
-        if not rate_limiter.is_allowed(client_ip):
+        rate_limit_identity = get_rate_limit_identity(request)
+        if not rate_limiter.is_allowed(rate_limit_identity):
             return JSONResponse(
                 status_code=429,
                 content={
@@ -139,27 +170,24 @@ async def process_card_image(image_bytes: bytes, region: str):
 
 def resolve_region(request: Request, image_data: ImageRequest) -> str:
     header_region = request.headers.get("x-ocr-region")
-    if header_region and header_region.strip():
-        return header_region.strip()
-
-    if image_data.region and image_data.region.strip():
-        return image_data.region.strip()
-
-    legacy_type = (image_data.type or "").strip()
-    if legacy_type.startswith("import-"):
-        return legacy_type.replace("import-", "", 1).strip()
-    if legacy_type.startswith("char-"):
+    if not header_region or not header_region.strip():
         raise HTTPException(
             status_code=400,
-            detail="Legacy char-* mode was removed. Send X-OCR-Region for split-card OCR regions.",
+            detail="Missing OCR region. Send X-OCR-Region (character, weapon, watermark, forte, sequences, echo1..echo5).",
         )
-    if legacy_type and "-" not in legacy_type:
-        return legacy_type
 
-    raise HTTPException(
-        status_code=400,
-        detail="Missing OCR region. Send X-OCR-Region (for example: character, weapon, watermark, forte, sequences, echo1..echo5).",
-    )
+    region = header_region.strip()
+    if region not in SUPPORTED_REGIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unsupported OCR region '"
+                f"{region}" 
+                "'. Valid regions: character, weapon, watermark, forte, sequences, echo1, echo2, echo3, echo4, echo5."
+            ),
+        )
+
+    return region
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):

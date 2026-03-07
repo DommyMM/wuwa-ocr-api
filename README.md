@@ -9,7 +9,7 @@ Hosted at `https://ocr.wuwabuilds.moe`.
 
 ## Overview
 
-Processes cropped screenshot regions from the WuWaBuilds frontend and returns structured game data (character, weapon, echo, forte, sequence, watermark). Uses a hybrid OCR pipeline combining Tesseract and RapidOCR with computer vision techniques (SIFT feature matching, perceptual hashing, HSV color analysis) for accurate echo identification.
+Processes cropped screenshot regions from the WuWaBuilds frontend and returns structured game data for character, weapon, watermark, forte, sequences, and five echo panels. Uses Tesseract, RapidOCR, and computer-vision matching for echo identification.
 
 ---
 
@@ -20,6 +20,8 @@ Processes cropped screenshot regions from the WuWaBuilds frontend and returns st
 - Data loaded from `backend/Data/*.json` and template PNGs at startup
 - Pre-computes SIFT features, perceptual hashes, and HSV histograms for all echo/element templates
 - Echo, character, and weapon OCR results include IDs for robust frontend matching
+- Single OCR contract: JSON body with `image`, region selected by `X-OCR-Region`
+- Optional trusted-proxy mode: a server-side proxy can forward the real client IP when it includes the shared internal key
 
 ---
 
@@ -48,75 +50,114 @@ Request body:
 }
 ```
 
-Recommended header:
+Required header:
 
 ```http
 X-OCR-Region: character | weapon | watermark | forte | sequences | echo1 | echo2 | echo3 | echo4 | echo5
 ```
 
-Compatibility fallbacks (optional body fields):
+Notes:
 
-- `region`: direct region key
-- `type`: legacy `import-<region>` format
+- `image` may be raw base64 or a data URL (`data:image/png;base64,...`)
+- Missing or unknown regions return `400`
 
-### Example Responses
+### Region Responses
 
-Character region:
-
-```json
-{
-  "success": true,
-  "analysis": {
-    "name": "Aemeath",
-    "id": "1210",
-    "level": 90
-  }
-}
-```
-
-Weapon region:
+`character`
 
 ```json
 {
   "success": true,
   "analysis": {
-    "name": "Everbright Polestar",
-    "id": "21020076",
+    "name": "Aalto",
+    "id": "1105",
     "level": 90
   }
 }
 ```
 
-Echo region (`echo1`–`echo5`):
+`weapon`
+
+```json
+{
+  "success": true,
+  "analysis": {
+    "name": "Static Mist",
+    "id": "21010016",
+    "level": 90
+  }
+}
+```
+
+`watermark`
+
+```json
+{
+  "success": true,
+  "analysis": {
+    "username": "Player",
+    "uid": 123456789
+  }
+}
+```
+
+`forte`
+
+```json
+{
+  "success": true,
+  "analysis": {
+    "levels": [10, 10, 10, 10, 10]
+  }
+}
+```
+
+`sequences`
+
+```json
+{
+  "success": true,
+  "analysis": {
+    "sequence": 6
+  }
+}
+```
+
+`echo1`-`echo5`
 
 ```json
 {
   "success": true,
   "analysis": {
     "name": {
-      "name": "Sigillum",
-      "id": "60001915",
+      "name": "Mech Abomination",
+      "id": "6000020",
       "confidence": 0.87
     },
     "main": { "name": "Crit DMG", "value": "44%" },
-    "substats": [{ "name": "Crit Rate", "value": "8.7%" }],
-    "element": "Trailblazing"
+    "substats": [
+      { "name": "Crit Rate", "value": "8.7%" },
+      { "name": "ATK%", "value": "11.6%" }
+    ],
+    "element": "Electro"
   }
 }
 ```
 
 ### Other Endpoints
 
-- `GET /health` → health check
-- `GET /` → API status metadata with endpoint documentation
+- `GET /health` → returns `{ "status": "ok" }`
+- `GET /` → returns lightweight API metadata for `/api/ocr`
 
 ---
 
 ## Limits and Errors
 
 - Rate limit: `60` requests/minute per IP
+- Direct callers are limited by the immediate socket IP seen by FastAPI
+- Trusted proxy callers can be limited by forwarded end-user IP via `X-OCR-Client-IP` when `X-OCR-Internal-Key` matches `OCR_INTERNAL_KEY`
 - Timeout: `60s` per OCR request
-- Auto pool restart after 3+ consecutive 500 errors
+- Force process restart after `3` consecutive unhandled `500` responses
 - Common statuses:
   - `400` invalid image/region/request
   - `408` processing timeout
@@ -150,9 +191,7 @@ Echo identification uses a multi-stage pipeline balancing speed and accuracy:
 | `rapidfuzz` | Fuzzy string matching for name resolution |
 | `imagehash` / `Pillow` | Perceptual hashing |
 | `numpy` | Numerical arrays |
-| `slowapi` | IP-based rate limiting |
 | `pydantic` | Request/response validation |
-| `python-dotenv` | Environment variable loading |
 
 ---
 
@@ -183,6 +222,7 @@ healthcheckTimeout = 30
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PORT` | No | `5000` | Server listen port |
+| `OCR_INTERNAL_KEY` | No | unset | Shared secret that allows a trusted proxy to forward the original client IP for rate limiting |
 
 ---
 
