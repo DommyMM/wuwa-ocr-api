@@ -20,7 +20,7 @@ MAX_WORKERS = 8
 PROCESS_TIMEOUT = 60
 REQUESTS_PER_MINUTE = 60
 PORT = int(os.getenv("PORT", "5000"))
-OCR_INTERNAL_KEY = os.getenv("OCR_INTERNAL_KEY", "").strip()
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "").strip()
 consecutive_500s = 0
 MAX_CONSECUTIVE_500S = 3
 SUPPORTED_REGIONS = { "character", "weapon", "watermark", "forte", "sequences", "echo1", "echo2", "echo3", "echo4", "echo5" }
@@ -61,10 +61,10 @@ def normalize_ip(value: Optional[str]) -> Optional[str]:
         return None
 
 def is_trusted_proxy_request(request: Request) -> bool:
-    if not OCR_INTERNAL_KEY:
+    if not INTERNAL_API_KEY:
         return False
 
-    return request.headers.get("x-ocr-internal-key", "").strip() == OCR_INTERNAL_KEY
+    return request.headers.get("x-internal-key", "").strip() == INTERNAL_API_KEY
 
 def get_rate_limit_identity(request: Request) -> str:
     if is_trusted_proxy_request(request):

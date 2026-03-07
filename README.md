@@ -155,7 +155,7 @@ Notes:
 
 - Rate limit: `60` requests/minute per IP
 - Direct callers are limited by the immediate socket IP seen by FastAPI
-- Trusted proxy callers can be limited by forwarded end-user IP via `X-OCR-Client-IP` when `X-OCR-Internal-Key` matches `OCR_INTERNAL_KEY`
+- Trusted proxy callers can be limited by forwarded end-user IP via `X-OCR-Client-IP` when `X-Internal-Key` matches `INTERNAL_API_KEY`
 - Timeout: `60s` per OCR request
 - Force process restart after `3` consecutive unhandled `500` responses
 - Common statuses:
@@ -222,7 +222,7 @@ healthcheckTimeout = 30
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PORT` | No | `5000` | Server listen port |
-| `OCR_INTERNAL_KEY` | No | unset | Shared secret that allows a trusted proxy to forward the original client IP for rate limiting |
+| `INTERNAL_API_KEY` | No | unset | Shared secret used by trusted internal proxies; OCR uses it to trust forwarded client IPs |
 
 ---
 
