@@ -1,35 +1,12 @@
 from pathlib import Path
 import json
-import threading
 import cv2
 import numpy as np
-from typing import Any, Callable, Dict, List, Set, Optional, Tuple
-from cv2 import FlannBasedMatcher
+from typing import Dict, List, Set
+from cv2 import SIFT_create
 from rapidocr_onnxruntime import RapidOCR
-import imagehash
-from PIL import Image
 
-_sift_ctor: Callable[[], Any] = getattr(cv2, "SIFT_create")
-_THREAD_LOCAL = threading.local()
-# Shared matcher params; actual matcher instances are request-local.
-_FLANN_PARAMS = (dict(algorithm=1, trees=5), dict(checks=50))
-
-def make_sift():
-    """Create a fresh SIFT instance for request-local feature extraction."""
-    return _sift_ctor()
-
-def make_flann() -> FlannBasedMatcher:
-    """Create a fresh FLANN matcher instance for request-local matching."""
-    index_params, search_params = _FLANN_PARAMS
-    return FlannBasedMatcher(dict(index_params), dict(search_params))
-
-def run_rapid(image):
-    """Run RapidOCR using a thread-local engine instance."""
-    engine = getattr(_THREAD_LOCAL, "rapid", None)
-    if engine is None:
-        engine = RapidOCR(lang='en')
-        _THREAD_LOCAL.rapid = engine
-    return engine(image)
+Rapid = RapidOCR(lang='en')
 
 # Initialize empty defaults
 CHARACTER_NAMES: List[str] = []
@@ -48,8 +25,6 @@ ICON_TEMPLATES: Dict[str, np.ndarray] = {}
 TEMPLATE_FEATURES = {}
 ELEMENT_TEMPLATES: Dict[str, np.ndarray] = {}
 ELEMENT_FEATURES = {}
-TEMPLATE_PHASHES: Dict = {}
-TEMPLATE_HISTOGRAMS: Dict[str, np.ndarray] = {}
 
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
@@ -95,9 +70,10 @@ def _load_from_local():
     print(f"Loaded local data: {len(CHARACTER_NAMES)} characters, {len(WEAPON_NAMES)} weapons, {len(ECHO_NAMES)} echoes")
 
 
-def load_templates(folder: str, templates: dict, features: dict, target_size: Optional[Tuple[int, int]] = None) -> int:
+def load_templates(folder: str, templates: dict, features: dict, target_size: tuple = None) -> int:
     count = 0
-    sift = make_sift()
+    sift = SIFT_create()
+
     for icon_path in (DATA_DIR / folder).glob('*.png'):
         try:
             img = cv2.imread(str(icon_path))
@@ -145,19 +121,6 @@ try:
     echo_count = load_templates('Echoes', ICON_TEMPLATES, TEMPLATE_FEATURES, (188, 188))
     element_count = load_templates('Elements', ELEMENT_TEMPLATES, ELEMENT_FEATURES)
     print(f"Loaded {echo_count} echo templates and {element_count} element templates")
-
-    # Precompute pHash for each echo template (~0.5s one-time, ~6KB RAM)
-    for name, img in ICON_TEMPLATES.items():
-        pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        TEMPLATE_PHASHES[name] = imagehash.phash(pil, hash_size=16)
-    print(f"Precomputed {len(TEMPLATE_PHASHES)} pHash values")
-
-    # Precompute HSV histograms for color comparison
-    for name, img in ICON_TEMPLATES.items():
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        hist = cv2.calcHist([hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
-        TEMPLATE_HISTOGRAMS[name] = cv2.normalize(hist, hist).flatten()
-    print(f"Precomputed {len(TEMPLATE_HISTOGRAMS)} template histograms")
 
 except Exception as e:
     print(f"Critical error during initialization: {e}")

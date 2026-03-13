@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import base64
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
-from typing import Optional, Any, cast
+from typing import Any, Optional, cast
 from card import process_card
 import time
 from collections import defaultdict
@@ -23,11 +23,12 @@ PORT = int(os.getenv("PORT", "5000"))
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "").strip()
 consecutive_500s = 0
 MAX_CONSECUTIVE_500S = 3
-SUPPORTED_REGIONS = { "character", "weapon", "watermark", "forte", "sequences", "echo1", "echo2", "echo3", "echo4", "echo5" }
 
 # Ensure output is flushed for Railway
-if hasattr(sys.stdout, "reconfigure"): cast(Any, sys.stdout).reconfigure(line_buffering=True)
-if hasattr(sys.stderr, "reconfigure"): cast(Any, sys.stderr).reconfigure(line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"):
+    cast(Any, sys.stdout).reconfigure(line_buffering=True)
+if hasattr(sys.stderr, "reconfigure"):
+    cast(Any, sys.stderr).reconfigure(line_buffering=True)
 
 def force_restart(reason: str):
     print(f"FORCING RESTART: {reason}", flush=True)
@@ -80,6 +81,8 @@ def get_rate_limit_identity(request: Request) -> str:
 
 class ImageRequest(BaseModel):
     image: str
+    region: Optional[str] = None
+    type: Optional[str] = None  # Legacy fallback ("import-<region>")
 
 class OCRResponse(BaseModel):
     success: bool
@@ -94,11 +97,12 @@ class APIStatus(BaseModel):
             "method": "POST",
             "request": {
                 "image": "string (base64 encoded image)",
+                "region": "string (optional body fallback)",
+                "type": "string (legacy fallback: 'import-<region>')"
             },
             "headers": {
-                "X-OCR-Region": "string (required region identifier)"
+                "X-OCR-Region": "string (recommended region identifier)"
             },
-            "supported_regions": sorted(SUPPORTED_REGIONS),
         }
     }
 
@@ -170,24 +174,27 @@ async def process_card_image(image_bytes: bytes, region: str):
 
 def resolve_region(request: Request, image_data: ImageRequest) -> str:
     header_region = request.headers.get("x-ocr-region")
-    if not header_region or not header_region.strip():
+    if header_region and header_region.strip():
+        return header_region.strip()
+
+    if image_data.region and image_data.region.strip():
+        return image_data.region.strip()
+
+    legacy_type = (image_data.type or "").strip()
+    if legacy_type.startswith("import-"):
+        return legacy_type.replace("import-", "", 1).strip()
+    if legacy_type.startswith("char-"):
         raise HTTPException(
             status_code=400,
-            detail="Missing OCR region. Send X-OCR-Region (character, weapon, watermark, forte, sequences, echo1..echo5).",
+            detail="Legacy char-* mode was removed. Send X-OCR-Region for split-card OCR regions.",
         )
+    if legacy_type and "-" not in legacy_type:
+        return legacy_type
 
-    region = header_region.strip()
-    if region not in SUPPORTED_REGIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Unsupported OCR region '"
-                f"{region}" 
-                "'. Valid regions: character, weapon, watermark, forte, sequences, echo1, echo2, echo3, echo4, echo5."
-            ),
-        )
-
-    return region
+    raise HTTPException(
+        status_code=400,
+        detail="Missing OCR region. Send X-OCR-Region (for example: character, weapon, watermark, forte, sequences, echo1..echo5).",
+    )
 
 @app.post("/api/ocr", response_model=OCRResponse)
 async def process_image_request(request: Request, image_data: ImageRequest):
