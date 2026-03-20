@@ -81,7 +81,7 @@ def preprocess_region(image):
     return thresh
 
 def clean_stat_name(name: str, value: str) -> str:
-    name = re.sub(r'\s+', ' ', name.strip()).replace("Crit.", "Crit")
+    name = re.sub(r'\s+', ' ', name.strip()).replace("Crit.", "Crit").rstrip('.')
     if name.upper() in ["ATK", "HP", "DEF"] and "%" in value:
         return f"{name.upper()}%"
     return name.upper() if name.upper() in ["ATK", "HP", "DEF"] else name
