@@ -15,10 +15,18 @@ import asyncio
 from contextlib import asynccontextmanager
 import ipaddress
 import sys
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed; rely on env vars being set externally
 
-MAX_WORKERS = 8
-PROCESS_TIMEOUT = 60
-REQUESTS_PER_MINUTE = 60
+IS_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))
+USE_GPU = os.getenv("USE_GPU", "0" if IS_RAILWAY else "1") == "1"
+
+MAX_WORKERS = int(os.getenv("OCR_WORKERS", "8"))
+PROCESS_TIMEOUT = int(os.getenv("OCR_TIMEOUT", "60"))
+REQUESTS_PER_MINUTE = int(os.getenv("OCR_RATE_LIMIT", "60"))
 PORT = int(os.getenv("PORT", "5000"))
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "").strip()
 consecutive_500s = 0
@@ -108,7 +116,7 @@ class APIStatus(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"Server starting on port {PORT}", flush=True)
+    print(f"Server starting on port {PORT} | railway={IS_RAILWAY} gpu={USE_GPU} workers={MAX_WORKERS}", flush=True)
     yield
     print("Server shutting down", flush=True)
     executor.shutdown(wait=True)

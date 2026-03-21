@@ -96,10 +96,20 @@ Echo region (`echo1`-`echo5`):
 - `GET /health` -> health check
 - `GET /` -> API status metadata
 
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | HTTP listen port |
+| `INTERNAL_API_KEY` | — | Trusted proxy key (Railway → OCR); skips per-IP rate limiting and uses forwarded client IP |
+| `OCR_WORKERS` | `8` | `ProcessPoolExecutor` size — parallel Tesseract processes. Match to CPU thread count locally (e.g. `16` for 7800X3D). Railway is capped at `8` vCPU. |
+| `OCR_RATE_LIMIT` | `60` | Requests per minute per IP. Set to `10000` locally to disable effective limiting during batch import. |
+| `OCR_TIMEOUT` | `60` | Seconds before a single OCR request times out. |
+
 ## Limits and Errors
 
-- Rate limit: `60` requests/minute per IP
-- Timeout: `60s` per OCR request
+- Rate limit: `OCR_RATE_LIMIT` requests/minute per IP (default `60`)
+- Timeout: `OCR_TIMEOUT` per OCR request (default `60s`)
 - Common statuses:
   - `400` invalid image/region/request
   - `408` processing timeout
