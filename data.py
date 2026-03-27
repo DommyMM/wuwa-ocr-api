@@ -103,19 +103,16 @@ try:
     # Runtime data source is local backend/Data (synced via scripts).
     _load_from_local()
 
-    with open(DATA_DIR / 'Mainstat.json', 'r', encoding='utf-8') as f:
-        main_data = json.load(f)
-        for cost_data in main_data.values():
-            if "mainStats" in cost_data:
-                for stat_name in cost_data["mainStats"].keys():
-                    if stat_name in ["HP%", "ATK%", "DEF%"]:
-                        MAIN_STAT_NAMES.add(stat_name.replace("%", ""))
-                    else:
-                        MAIN_STAT_NAMES.add(stat_name)
+    with open(DATA_DIR / 'EchoStats.json', 'r', encoding='utf-8') as f:
+        echo_stats = json.load(f)
+        for cost_data in echo_stats.get("mainStats", {}).values():
+            for stat_name in cost_data.keys():
+                if stat_name in ["HP%", "ATK%", "DEF%"]:
+                    MAIN_STAT_NAMES.add(stat_name.replace("%", ""))
+                else:
+                    MAIN_STAT_NAMES.add(stat_name)
 
-    with open(DATA_DIR / 'Substats.json', 'r', encoding='utf-8') as f:
-        sub_data = json.load(f)
-        SUB_STATS = sub_data["subStats"]
+        SUB_STATS = echo_stats.get("subStats", {})
         SUB_STAT_NAMES = set(SUB_STATS.keys())
 
     echo_count = load_templates('Echoes', ICON_TEMPLATES, TEMPLATE_FEATURES, (188, 188))
