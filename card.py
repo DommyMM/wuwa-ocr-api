@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, ELEMENT_FEATURES, Rapid
+from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, Rapid, determine_element
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -209,47 +209,8 @@ def parse_region_text(name, text):
 def get_element_region(image):
     """Extract element region from individual echo image"""
     h, w = image.shape[:2]
-    x1 = int(w * 0.664)
-    x2 = int(w * 0.812)
-    y1 = int(h * 0.024)
-    y2 = int(h * 0.160)
-    
-    return image[y1:y2, x1:x2]
+    return image[int(h*0.027):int(h*0.148), int(w*0.654):int(w*0.797)]
 
-def determine_element(image, filter_elements):
-    """Match element using SIFT features
-
-    Args:
-        image: Element icon region
-        filter_elements: Either a string (echo_name) or list of element names to check against
-
-    Returns:
-        Best matching element name
-    """
-    # Handle both string (echo_name) and list (candidate elements) inputs
-    if isinstance(filter_elements, str):
-        # Legacy behavior: filter by echo name
-        base_name = filter_elements.replace("Phantom ", "") if filter_elements.startswith("Phantom ") else filter_elements
-        possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
-    else:
-        # New behavior: use provided element list
-        possible_elements = filter_elements if filter_elements else ["Unknown"]
-
-    sift = SIFT_create()
-    flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
-
-    kp1, des1 = sift.detectAndCompute(image, None)
-    if des1 is None:
-        return "Unknown"
-
-    matches = []
-    for name, (kp2, des2) in ELEMENT_FEATURES.items():
-        if name in possible_elements:
-            matches_list = flann.knnMatch(des1, des2, k=2)
-            good_matches = [m for m, n in matches_list if m.distance < 0.7 * n.distance]
-            confidence = len(good_matches) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0
-            matches.append((name, confidence))
-    return max(matches, key=lambda x: x[1])[0] if matches else "Unknown"
 
 def get_echo_cost(image: np.ndarray) -> int:
     """Get echo cost from image region"""

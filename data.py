@@ -3,7 +3,7 @@ import json
 import cv2
 import numpy as np
 from typing import Dict, List, Set
-from cv2 import SIFT_create
+from cv2 import SIFT_create, FlannBasedMatcher
 from rapidocr_onnxruntime import RapidOCR
 
 Rapid = RapidOCR(lang='en')
@@ -123,6 +123,88 @@ except Exception as e:
     print(f"Critical error during initialization: {e}")
     print(f"Working directory: {Path.cwd()}")
     print(f"Data directory exists: {DATA_DIR.exists()}")
+
+# Elements that share a hue cluster — HSV alone can't separate these pairs.
+# Within a cluster, fall back to SIFT. Across clusters, HSV is decisive.
+# Electro (H≈135) is distinct from all clusters; no entry needed.
+_HUE_CLUSTERS = [
+    {'ER', 'Tidebreaking'},                                               # grayscale
+    {'Trailblazing', 'Chromatic', 'Fusion', 'Flamewing', 'Flaming', 'Attack', 'Crown'},  # H≈7
+    {'Pact', 'Rite', 'Spectro', 'Radiance'},                             # H≈26
+    {'Halo', 'Healing'},                                                  # H≈41
+    {'Sound', 'Aero', 'Gust', 'Windward'},                               # H≈77
+    {'Glacio', 'Frosty'},                                                 # H≈102
+    {'Law', 'Empyrean'},                                                  # H≈109
+    {'Midnight', 'Dream', 'Thread', 'Havoc'},                            # H≈161
+]
+
+def _same_cluster(candidates: list) -> bool:
+    """Return True if all candidates fall within a single hue cluster."""
+    cset = set(candidates)
+    return any(cset <= cluster for cluster in _HUE_CLUSTERS)
+
+def determine_element(image, filter_elements):
+    """Match element: HSV histogram first, SIFT fallback only within same hue cluster."""
+    if isinstance(filter_elements, str):
+        base_name = filter_elements.replace("Phantom ", "") if filter_elements.startswith("Phantom ") else filter_elements
+        possible_elements = ECHO_ELEMENTS.get(base_name, ["Unknown"])
+    else:
+        possible_elements = filter_elements if filter_elements else ["Unknown"]
+
+    if len(possible_elements) == 1:
+        return possible_elements[0]
+
+    # HSV histogram match
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, np.array([0, 40, 40]), np.array([180, 255, 255]))
+    hist = cv2.calcHist([hsv], [0], mask, [36], [0, 180])
+    cv2.normalize(hist, hist)
+
+    image_colored = cv2.countNonZero(mask)
+
+    scores = []
+    for name in possible_elements:
+        if name not in ELEMENT_TEMPLATES:
+            continue
+        tmpl = ELEMENT_TEMPLATES[name]
+        t_hsv = cv2.cvtColor(tmpl, cv2.COLOR_BGR2HSV)
+        t_mask = cv2.inRange(t_hsv, np.array([0, 40, 40]), np.array([180, 255, 255]))
+        if cv2.countNonZero(t_mask) == 0:
+            # Grayscale template (ER, Tidebreaking): HISTCMP_CORREL returns 1.0 for
+            # all-zero histograms regardless of image content — score manually instead.
+            # Use a pixel threshold to tolerate a few background/noise pixels.
+            total_px = image.shape[0] * image.shape[1]
+            score = 1.0 if image_colored < max(10, int(total_px * 0.03)) else -1.0
+        else:
+            t_hist = cv2.calcHist([t_hsv], [0], t_mask, [36], [0, 180])
+            cv2.normalize(t_hist, t_hist)
+            score = cv2.compareHist(hist, t_hist, cv2.HISTCMP_CORREL)
+        scores.append((name, score))
+
+    if not scores:
+        return "Unknown"
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+    best, second = scores[0], scores[1] if len(scores) > 1 else None
+
+    # If top two are in the same hue cluster, HSV can't distinguish — use SIFT
+    if second is not None and _same_cluster([best[0], second[0]]):
+        sift = SIFT_create()
+        flann = FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
+        kp1, des1 = sift.detectAndCompute(image, None)
+        if des1 is not None:
+            sift_scores = []
+            for name, (kp2, des2) in ELEMENT_FEATURES.items():
+                if name not in possible_elements:
+                    continue
+                ml = flann.knnMatch(des1, des2, k=2)
+                good = [m for m, n in ml if m.distance < 0.7 * n.distance]
+                sift_scores.append((name, len(good) / max(len(kp1), len(kp2)) if kp1 and kp2 else 0))
+            if sift_scores:
+                return max(sift_scores, key=lambda x: x[1])[0]
+
+    return best[0]
+
 
 ECHO_REGIONS = {
     "name": {"top": 0.052, "left": 0.055, "width": 0.8, "height": 0.11},

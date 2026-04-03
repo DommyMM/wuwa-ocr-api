@@ -15,6 +15,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import ipaddress
 import sys
+from pathlib import Path
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -260,6 +261,16 @@ async def homepage():
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/ocr-results")
+async def ocr_results():
+    """Serve the batch OCR results JSON for frontend bulk submission."""
+    import json as _json
+    results_path = Path(__file__).parent.parent / "ocr_results.json"
+    if not results_path.exists():
+        return JSONResponse(status_code=404, content={"error": "ocr_results.json not found — run batch_ocr.py first"})
+    with open(results_path, encoding="utf-8") as f:
+        return _json.load(f)
 
 if __name__ == "__main__":
     import uvicorn

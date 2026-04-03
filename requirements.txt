@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 slowapi
-opencv-python
+opencv-python-headless
 numpy
 Pillow
 pytesseract
