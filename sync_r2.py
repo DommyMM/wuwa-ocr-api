@@ -14,8 +14,12 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).parent
 R2_BACKUP   = BACKEND_DIR.parent / "r2-backup"
-ENV_FILE    = BACKEND_DIR.parent / "wuwabuilds" / ".env"
 DRY_RUN     = "--run" not in sys.argv
+
+ENV_CANDIDATES = [
+    BACKEND_DIR.parent / "wuwabuilds" / ".env",
+    BACKEND_DIR / ".env",
+]
 
 
 def load_env(path: Path) -> dict:
@@ -29,6 +33,22 @@ def load_env(path: Path) -> dict:
     return env
 
 
+def find_env_file() -> Path:
+    for path in ENV_CANDIDATES:
+        if path.exists():
+            return path
+    checked = ", ".join(str(path) for path in ENV_CANDIDATES)
+    raise FileNotFoundError(f"No .env file found. Checked: {checked}")
+
+
+def local_keys() -> set[str]:
+    return {
+        str(path.relative_to(R2_BACKUP)).replace("\\", "/")
+        for path in R2_BACKUP.rglob("*")
+        if path.is_file()
+    }
+
+
 def main():
     try:
         import boto3
@@ -37,7 +57,8 @@ def main():
         sys.exit(1)
 
     R2_BACKUP.mkdir(exist_ok=True)
-    env        = load_env(ENV_FILE)
+    env_file   = find_env_file()
+    env        = load_env(env_file)
     account_id = env["CLOUDFLARE_ACCOUNT_ID"]
     bucket     = env.get("R2_BUCKET_NAME", "wuwabuilds")
 
@@ -59,10 +80,10 @@ def main():
 
     print(f"Found {len(all_keys)} objects in R2")
 
-    local_files = {p.name for p in R2_BACKUP.iterdir() if p.is_file()}
-    to_download = [k for k in all_keys if k not in local_files]
+    existing_keys = local_keys()
+    to_download = [k for k in all_keys if k not in existing_keys]
 
-    print(f"Local r2-backup: {len(local_files)} files")
+    print(f"Local r2-backup: {len(existing_keys)} files")
     print(f"To download:     {len(to_download)} new files")
 
     if not to_download:
@@ -87,7 +108,9 @@ def main():
     def fetch(idx_key):
         idx, key = idx_key
         try:
-            s3.download_file(bucket, key, str(R2_BACKUP / key))
+            destination = R2_BACKUP / key
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            s3.download_file(bucket, key, str(destination))
             return idx, key, None
         except Exception as e:
             return idx, key, str(e)
@@ -105,7 +128,7 @@ def main():
 
     print(f"\n{'─'*50}")
     print(f"  Downloaded: {downloaded}  Failed: {failed}")
-    print(f"  r2-backup now has {len(list(R2_BACKUP.iterdir()))} files")
+    print(f"  r2-backup now has {len(local_keys())} files")
 
 
 if __name__ == "__main__":

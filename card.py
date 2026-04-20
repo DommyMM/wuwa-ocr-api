@@ -541,8 +541,11 @@ def process_card(image, region: str):
             names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
             tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
             
-            # First clean out invalid bonus lines
-            names_lines = [line for line in names_lines if not ("Bonus" in line and len(line.split()) < 3)]
+            # First clean out invalid bonus lines (including OCR-truncated variants like "onus")
+            bonus_fragment = re.compile(r'^\.?[Bb]?onus\.?$')
+            names_lines = [line for line in names_lines
+                            if not bonus_fragment.fullmatch(line.strip())
+                            and not ("Bonus" in line and len(line.split()) < 3)]
             
             # Use Rapid if not exactly 5 entries
             if len(names_lines) < 5:
