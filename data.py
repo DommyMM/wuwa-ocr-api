@@ -26,6 +26,12 @@ TEMPLATE_FEATURES = {}
 ELEMENT_TEMPLATES: Dict[str, np.ndarray] = {}
 ELEMENT_FEATURES = {}
 
+# Echoes whose CDN element list is incomplete. Hecate's in-game resonance box
+# allows the 6 base elemental sonata sets on top of its default Empyrean
+ECHO_ELEMENT_OVERRIDES: Dict[str, List[str]] = {
+    '60000855': ['Empyrean', 'Glacio', 'Fusion', 'Electro', 'Aero', 'Spectro', 'Havoc'],
+}
+
 # Paths
 DATA_DIR = Path(__file__).parent / 'Data'
 
@@ -66,6 +72,12 @@ def _load_from_local():
             ECHO_COSTS[eid]    = e['cost']
             ECHO_ELEMENTS[eid] = e['elements']
             ECHO_NAME_MAP[eid] = name
+
+    # Mirrors echoExtraFetterIDs in lb/internal/calc/validate.go: Hecate's in-game
+    # resonance box allows the 6 base elemental sets on top of its default Empyrean.
+    for eid, elements in ECHO_ELEMENT_OVERRIDES.items():
+        if eid in ECHO_ELEMENTS:
+            ECHO_ELEMENTS[eid] = elements
 
     print(f"Loaded local data: {len(CHARACTER_NAMES)} characters, {len(WEAPON_NAMES)} weapons, {len(ECHO_NAMES)} echoes")
 
