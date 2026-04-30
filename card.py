@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, Rapid, determine_element
+from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, MAIN_STATS, DEFAULT_MAIN_STATS, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, Rapid, determine_element
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -115,6 +115,28 @@ def validate_value(value: str, stat_name: str) -> str:
     except (ValueError, KeyError):
         pass
     return value
+
+def format_stat_value(value) -> str:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if numeric.is_integer():
+        return str(int(numeric))
+    return f"{numeric:g}"
+
+def max_main_stat_value(cost: int, stat_name: str) -> str | None:
+    """Return the level-25 main-stat value for an echo cost/stat pair."""
+    cost_key = f"{cost}cost"
+    cost_stats = MAIN_STATS.get(cost_key, {})
+    if stat_name in cost_stats and len(cost_stats[stat_name]) >= 2:
+        return f"{format_stat_value(cost_stats[stat_name][1])}%"
+
+    default_stat = DEFAULT_MAIN_STATS.get(cost_key)
+    if default_stat and len(default_stat) >= 3 and default_stat[0] == stat_name:
+        return format_stat_value(default_stat[2])
+
+    return None
 
 def validate_character_name(raw_name: str) -> str:
     if not CHARACTER_NAMES:
@@ -582,6 +604,14 @@ def process_card(image, region: str):
             name, confidence, element_data = match_icon(image)
             print(f"Echo identified: {name} (confidence: {confidence:.2%})")
             echo_data = parse_region_text(region, cleaned_text)
+            main = echo_data.get("main", {}) if isinstance(echo_data, dict) else {}
+            if main:
+                cost = ECHO_COSTS.get(name, 0)
+                max_value = max_main_stat_value(cost, main.get("name", ""))
+                if max_value:
+                    old_value = main.get("value")
+                    main["value"] = max_value
+                    print(f"Main stat value override: {main.get('name')} {old_value!r} -> {max_value!r} (cost {cost}, assumed Lv.25)")
             print(f"Echo '{name}' -> Element: {element_data}")
             
             # Restore stdout and flush all buffered logs at once

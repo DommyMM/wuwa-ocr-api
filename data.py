@@ -15,6 +15,8 @@ WEAPON_NAMES: List[str] = []
 WEAPON_DATA: Dict[str, str] = {}
 WEAPON_ID_MAP: Dict[str, str] = {}
 MAIN_STAT_NAMES: Set[str] = set()
+MAIN_STATS: Dict = {}
+DEFAULT_MAIN_STATS: Dict = {}
 SUB_STATS: Dict = {}
 SUB_STAT_NAMES: Set[str] = set()
 ECHO_NAMES: List[str] = []       # ordered list of English names (for logging/rapidfuzz)
@@ -117,7 +119,12 @@ try:
 
     with open(DATA_DIR / 'EchoStats.json', 'r', encoding='utf-8') as f:
         echo_stats = json.load(f)
-        for cost_data in echo_stats.get("mainStats", {}).values():
+        MAIN_STATS.clear()
+        MAIN_STATS.update(echo_stats.get("mainStats", {}))
+        DEFAULT_MAIN_STATS.clear()
+        DEFAULT_MAIN_STATS.update(echo_stats.get("defaultMainStats", {}))
+
+        for cost_data in MAIN_STATS.values():
             for stat_name in cost_data.keys():
                 if stat_name in ["HP%", "ATK%", "DEF%"]:
                     MAIN_STAT_NAMES.add(stat_name.replace("%", ""))
