@@ -145,8 +145,8 @@ _HUE_CLUSTERS = [
     {'Pact', 'Rite', 'Spectro', 'Radiance'},                             # H≈26
     {'Halo', 'Healing'},                                                  # H≈41
     {'Sound', 'Aero', 'Gust', 'Windward'},                               # H≈77
-    {'Glacio', 'Frosty'},                                                 # H≈102
-    {'Law', 'Empyrean'},                                                  # H≈109
+    {'Glacio', 'Frosty', 'QuietSnow'},                                    # H≈102
+    {'Law', 'Empyrean', 'Memories'},                                      # H≈109
     {'Midnight', 'Dream', 'Thread', 'Havoc'},                            # H≈161
 ]
 
