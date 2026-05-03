@@ -100,7 +100,21 @@ def validate_value(value: str, stat_name: str) -> str:
     clean_value = value.replace('%', '')
     
     try:
-        valid_values = [str(v) for v in SUB_STATS[stat_name]]
+        valid_rolls = SUB_STATS[stat_name]
+        valid_values = [str(v) for v in valid_rolls]
+        if stat_name in {"HP", "ATK", "DEF"} and not had_percent:
+            digits_only = re.sub(r"\D", "", clean_value)
+            if len(digits_only) > 2:
+                valid_int_rolls = {
+                    str(int(v))
+                    for v in valid_rolls
+                    if float(v).is_integer()
+                }
+                for start in range(1, len(digits_only)):
+                    suffix = digits_only[start:]
+                    if suffix in valid_int_rolls:
+                        return suffix
+
         match = process.extractOne(clean_value, valid_values)
         if match:
             float_value = float(clean_value)

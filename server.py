@@ -26,6 +26,7 @@ IS_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))
 USE_GPU = os.getenv("USE_GPU", "0" if IS_RAILWAY else "1") == "1"
 
 MAX_WORKERS = int(os.getenv("OCR_WORKERS", "8"))
+OPENCV_THREADS = int(os.getenv("OCR_OPENCV_THREADS", "1"))
 PROCESS_TIMEOUT = int(os.getenv("OCR_TIMEOUT", "60"))
 REQUESTS_PER_MINUTE = int(os.getenv("OCR_RATE_LIMIT", "60"))
 PORT = int(os.getenv("PORT", "5000"))
@@ -38,6 +39,8 @@ if hasattr(sys.stdout, "reconfigure"):
     cast(Any, sys.stdout).reconfigure(line_buffering=True)
 if hasattr(sys.stderr, "reconfigure"):
     cast(Any, sys.stderr).reconfigure(line_buffering=True)
+
+cv2.setNumThreads(OPENCV_THREADS)
 
 def force_restart(reason: str):
     print(f"FORCING RESTART: {reason}", flush=True)
@@ -117,7 +120,7 @@ class APIStatus(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"Server starting on port {PORT} | railway={IS_RAILWAY} gpu={USE_GPU} workers={MAX_WORKERS}", flush=True)
+    print(f"Server starting on port {PORT} | railway={IS_RAILWAY} gpu={USE_GPU} workers={MAX_WORKERS} opencv_threads={OPENCV_THREADS}", flush=True)
     yield
     print("Server shutting down", flush=True)
     executor.shutdown(wait=True)
@@ -129,6 +132,7 @@ def worker_init():
         cast(Any, sys.stdout).reconfigure(line_buffering=True)
     if hasattr(sys.stderr, "reconfigure"):
         cast(Any, sys.stderr).reconfigure(line_buffering=True)
+    cv2.setNumThreads(OPENCV_THREADS)
 
 executor = ProcessPoolExecutor(
     max_workers=MAX_WORKERS,
