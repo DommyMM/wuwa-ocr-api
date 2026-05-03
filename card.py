@@ -100,21 +100,7 @@ def validate_value(value: str, stat_name: str) -> str:
     clean_value = value.replace('%', '')
     
     try:
-        valid_rolls = SUB_STATS[stat_name]
-        valid_values = [str(v) for v in valid_rolls]
-        if stat_name in {"HP", "ATK", "DEF"} and not had_percent:
-            digits_only = re.sub(r"\D", "", clean_value)
-            if len(digits_only) > 2:
-                valid_int_rolls = {
-                    str(int(v))
-                    for v in valid_rolls
-                    if float(v).is_integer()
-                }
-                for start in range(1, len(digits_only)):
-                    suffix = digits_only[start:]
-                    if suffix in valid_int_rolls:
-                        return suffix
-
+        valid_values = [str(v) for v in SUB_STATS[stat_name]]
         match = process.extractOne(clean_value, valid_values)
         if match:
             float_value = float(clean_value)
@@ -129,6 +115,32 @@ def validate_value(value: str, stat_name: str) -> str:
     except (ValueError, KeyError):
         pass
     return value
+
+def is_legal_substat_value(value: str, stat_name: str) -> bool:
+    if not SUB_STATS or stat_name not in SUB_STATS:
+        return False
+
+    try:
+        numeric = float(value.replace('%', '').strip())
+    except (TypeError, ValueError):
+        return False
+
+    return any(abs(numeric - float(valid)) <= 0.05 for valid in SUB_STATS[stat_name])
+
+def choose_substat_value(stat_name: str, tess_value: str, rapid_value: str | None) -> str:
+    name_from_tess = validate_stat(clean_stat_name(stat_name, tess_value), SUB_STATS.keys())
+    if is_legal_substat_value(tess_value, name_from_tess):
+        return tess_value
+
+    if not rapid_value:
+        return tess_value
+
+    name_from_rapid = validate_stat(clean_stat_name(stat_name, rapid_value), SUB_STATS.keys())
+    if is_legal_substat_value(rapid_value, name_from_rapid):
+        print(f"Value OCR fallback: '{stat_name} {tess_value}' -> '{stat_name} {rapid_value}'")
+        return rapid_value
+
+    return tess_value
 
 def format_stat_value(value) -> str:
     try:
@@ -588,12 +600,6 @@ def process_card(image, region: str):
                 rapid_result, _ = Rapid(names_img)
                 names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
                 
-            if len(tess_values) != 5:
-                rapid_result, _ = Rapid(values_img)
-                values_lines = [text for _, text, _ in rapid_result] if rapid_result else []
-            else:
-                values_lines = tess_values
-            
             # Process names - combine DMG lines
             cleaned_names = []
             for i, line in enumerate(names_lines):
@@ -611,7 +617,33 @@ def process_card(image, region: str):
                     if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
                         cleaned_line = f"{cleaned_line} Bonus"
                     cleaned_names.append(cleaned_line)
-            values = values_lines[:5]
+
+            rapid_values = []
+            values_lines = tess_values
+            if len(tess_values) != 5:
+                rapid_result, _ = Rapid(values_img)
+                rapid_values = [text for _, text, _ in rapid_result] if rapid_result else []
+                values_lines = rapid_values
+            else:
+                has_invalid_tess_value = any(
+                    not is_legal_substat_value(
+                        value,
+                        validate_stat(clean_stat_name(name, value), SUB_STATS.keys()),
+                    )
+                    for name, value in zip(cleaned_names, tess_values)
+                )
+                if has_invalid_tess_value:
+                    rapid_result, _ = Rapid(values_img)
+                    rapid_values = [text for _, text, _ in rapid_result] if rapid_result else []
+
+            values = [
+                choose_substat_value(
+                    name,
+                    value,
+                    rapid_values[i] if i < len(rapid_values) else None,
+                )
+                for i, (name, value) in enumerate(zip(cleaned_names, values_lines[:5]))
+            ]
             subs_text = "\n".join(f"{name} {value}" for name, value in zip(cleaned_names, values))
             cleaned_text = f"{main_text}\n{subs_text}"
 
