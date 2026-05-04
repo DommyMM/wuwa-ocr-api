@@ -55,6 +55,7 @@ ICON_TEMPLATES: Dict[str, np.ndarray] = {}
 TEMPLATE_FEATURES = {}
 ELEMENT_TEMPLATES: Dict[str, np.ndarray] = {}
 ELEMENT_FEATURES = {}
+COST_TEMPLATES: Dict[int, np.ndarray] = {}
 
 # Echoes whose CDN element list is incomplete. Hecate's in-game resonance box
 # allows the 6 base elemental sonata sets on top of its default Empyrean
@@ -138,6 +139,18 @@ def load_templates(folder: str, templates: dict, features: dict, target_size: tu
             print(f"Error processing template {icon_path}: {e}")
     return count
 
+
+def load_cost_templates() -> int:
+    COST_TEMPLATES.clear()
+    for cost in (1, 3, 4):
+        path = DATA_DIR / "Costs" / f"cost{cost}.jpg"
+        img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            print(f"Failed to load cost template: {path}")
+            continue
+        COST_TEMPLATES[cost] = img
+    return len(COST_TEMPLATES)
+
 try:
     if not DATA_DIR.exists():
         raise FileNotFoundError(f"Data directory not found: {DATA_DIR}")
@@ -164,7 +177,8 @@ try:
 
     echo_count = load_templates('Echoes', ICON_TEMPLATES, TEMPLATE_FEATURES, (188, 188))
     element_count = load_templates('Elements', ELEMENT_TEMPLATES, ELEMENT_FEATURES)
-    print(f"Loaded {echo_count} echo templates and {element_count} element templates")
+    cost_count = load_cost_templates()
+    print(f"Loaded {echo_count} echo templates, {element_count} element templates, and {cost_count} cost templates")
 
 except Exception as e:
     print(f"Critical error during initialization: {e}")

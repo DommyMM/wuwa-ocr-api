@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import re
-from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, MAIN_STATS, DEFAULT_MAIN_STATS, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, Rapid, determine_element
+from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, MAIN_STATS, DEFAULT_MAIN_STATS, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, COST_TEMPLATES, Rapid, determine_element
 import numpy as np
 from rapidfuzz import process
 from typing import Tuple
@@ -270,25 +270,21 @@ def get_element_region(image):
 def get_echo_cost(image: np.ndarray) -> int:
     """Get echo cost from image region"""
     cost_img = image[9:61, 302:345]
-    
-    result, _ = Rapid(cost_img)
-    if result:
-        raw_cost = result[0][1]
-        cost_mapping = {
-            '1': 1, 'T': 1, 'l': 1, 'I': 1,  # Common misreads for 1
-            '3': 3, '4': 4, 'A': 4
-        }
-        # Try direct mapping first
-        if raw_cost in cost_mapping:
-            return cost_mapping[raw_cost]
-        
-        # If not found, try fuzzy matching with valid costs
-        valid_costs = ['1', '3', '4']
-        match = process.extractOne(raw_cost, valid_costs)
-        if match:
-            return int(match[0])
-    
-    return 0
+
+    if not COST_TEMPLATES:
+        return 0
+
+    gray = cv2.cvtColor(cost_img, cv2.COLOR_BGR2GRAY)
+    scores = []
+    for cost, template in COST_TEMPLATES.items():
+        tmpl = template
+        if tmpl.shape != gray.shape:
+            tmpl = cv2.resize(tmpl, (gray.shape[1], gray.shape[0]), interpolation=cv2.INTER_AREA)
+        score = cv2.matchTemplate(gray, tmpl, cv2.TM_CCOEFF_NORMED).max()
+        scores.append((cost, score))
+
+    best_cost, best_score = max(scores, key=lambda item: item[1])
+    return best_cost if best_score >= 0.2 else 0
 
 def calculate_vibrancy_score(img: np.ndarray) -> float:
     """Calculate vibrancy score based on color intensity and distribution"""
