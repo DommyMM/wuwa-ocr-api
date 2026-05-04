@@ -92,6 +92,14 @@ def validate_stat(name: str, valid_names: set) -> str:
     match = process.extractOne(name, list(valid_names))
     return match[0] if match else name
 
+def validate_substat_name(name: str, value: str) -> str:
+    cleaned = clean_stat_name(name, value)
+    matched = validate_stat(cleaned, SUB_STATS.keys())
+    base = matched.replace("%", "")
+    if base in {"HP", "ATK", "DEF"}:
+        return f"{base}%" if "%" in value else base
+    return matched
+
 def validate_value(value: str, stat_name: str) -> str:
     if not SUB_STATS or stat_name not in SUB_STATS:
         return value
@@ -128,14 +136,14 @@ def is_legal_substat_value(value: str, stat_name: str) -> bool:
     return any(abs(numeric - float(valid)) <= 0.05 for valid in SUB_STATS[stat_name])
 
 def choose_substat_value(stat_name: str, tess_value: str, rapid_value: str | None) -> str:
-    name_from_tess = validate_stat(clean_stat_name(stat_name, tess_value), SUB_STATS.keys())
+    name_from_tess = validate_substat_name(stat_name, tess_value)
     if is_legal_substat_value(tess_value, name_from_tess):
         return tess_value
 
     if not rapid_value:
         return tess_value
 
-    name_from_rapid = validate_stat(clean_stat_name(stat_name, rapid_value), SUB_STATS.keys())
+    name_from_rapid = validate_substat_name(stat_name, rapid_value)
     if is_legal_substat_value(rapid_value, name_from_rapid):
         print(f"Value OCR fallback: '{stat_name} {tess_value}' -> '{stat_name} {rapid_value}'")
         return rapid_value
@@ -239,8 +247,7 @@ def parse_region_text(name, text):
                     continue
                     
                 stat_name, stat_value = parts
-                name = clean_stat_name(stat_name, stat_value)
-                name = validate_stat(name, SUB_STATS.keys())
+                name = validate_substat_name(stat_name, stat_value)
                 value = validate_value(stat_value, name)
                 substats.append({"name": name, "value": value})
             
@@ -628,7 +635,7 @@ def process_card(image, region: str):
                 has_invalid_tess_value = any(
                     not is_legal_substat_value(
                         value,
-                        validate_stat(clean_stat_name(name, value), SUB_STATS.keys()),
+                        validate_substat_name(name, value),
                     )
                     for name, value in zip(cleaned_names, tess_values)
                 )
