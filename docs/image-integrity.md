@@ -58,6 +58,20 @@ large size is a useful review hint, but dimensions/aspect are cleaner than size.
     - `suspect`: echo-row integrity outlier.
     - `reject`: decode/shape/layout-level failure.
 
+- `review_integrity_queue.py`
+  - Interactive local review tool for `scan_image_integrity.py` output.
+  - Opens each flagged image, records `keep`, `delete`, or `review`.
+  - Writes `review_decisions.json` next to the queue.
+  - Exports delete decisions to `backend/invalid_images.json`, which is the
+    input consumed by `clean_invalid.py`.
+  - CLI fallback when a browser UI is not wanted.
+
+- `review_integrity_gui.py`
+  - Browser-based review UI for the same queue and decisions file.
+  - Shows the image, verdict, reasons, and panel metrics on one page.
+  - Buttons and keyboard shortcuts mark `keep`, `delete`, or `review`.
+  - Exports delete decisions to `backend/invalid_images.json`, same as the CLI.
+
 - `forensics_echo_integrity.py`
   - Crops the five frontend echo regions.
   - Writes panel crops, gold/row overlays, edge maps, ELA heatmaps, `metrics.csv`,
@@ -82,6 +96,19 @@ py scan_image_integrity.py `
   "..\r2-backup\<image-key>.jpg" `
   --baseline "..\r2-backup" `
   --out "..\forensics\one_image_scan"
+
+py review_integrity_queue.py `
+  "..\forensics\integrity_scan\review_queue.json" `
+  "..\r2-backup" `
+  --verdict suspect
+
+py review_integrity_gui.py `
+  "..\forensics\integrity_scan\review_queue.json" `
+  "..\r2-backup" `
+  --verdict suspect
+
+py clean_invalid.py
+py clean_invalid.py --run
 
 py forensics_echo_integrity.py `
   "..\r2-backup\<image-key>.jpg" `
