@@ -46,22 +46,43 @@ large size is a useful review hint, but dimensions/aspect are cleaner than size.
 
 ## Current Scripts
 
+- `scan_image_integrity.py`
+  - Primary harness for day-to-day use.
+  - Accepts either an image directory or a single image file.
+  - Builds position-aware panel baselines from the scanned directory, or from
+    `--baseline <dir>` when scanning a single file.
+  - Writes `integrity_scan.csv`, `panel_metrics.csv`, and `review_queue.json`.
+  - Verdicts:
+    - `ok`: no current rule fired.
+    - `review`: non-fatal review hints, such as non-JPG local artifacts.
+    - `suspect`: echo-row integrity outlier.
+    - `reject`: decode/shape/layout-level failure.
+
 - `forensics_echo_integrity.py`
   - Crops the five frontend echo regions.
   - Writes panel crops, gold/row overlays, edge maps, ELA heatmaps, `metrics.csv`,
     and `report.json`.
-  - Useful for manual inspection and feature exploration.
+  - Debug-only. Use when a flagged card needs visual artifacts for inspection.
 
 - `baseline_echo_row_darkness.py`
   - Scans a local image directory.
   - Computes row darkness and longest dark-run ratios per panel.
   - Reports panel-position p99.5 thresholds and top outliers for panels 3-5.
-  - This is the strongest current production candidate for manipulated echo
-    row detection.
+  - Debug-only. Its production-relevant behavior is now folded into
+    `scan_image_integrity.py`.
 
 Example commands:
 
 ```powershell
+py scan_image_integrity.py `
+  "..\r2-backup" `
+  --out "..\forensics\integrity_scan"
+
+py scan_image_integrity.py `
+  "..\r2-backup\<image-key>.jpg" `
+  --baseline "..\r2-backup" `
+  --out "..\forensics\one_image_scan"
+
 py forensics_echo_integrity.py `
   "..\r2-backup\<image-key>.jpg" `
   --reference "..\trusted-reference\<reference-card>.jpg" `
