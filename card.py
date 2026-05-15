@@ -541,6 +541,43 @@ def merge_stat_lines(names: list, values: list) -> str:
     """Merge stat names with their values"""
     return "\n".join(f"{name} {value}" for name, value in zip(names, values))
 
+def _canonical_stat_fragment(line: str) -> str:
+    return re.sub(r"[^a-z]", "", line.lower())
+
+def _append_dmg_bonus_suffix(name: str) -> str:
+    if re.search(r"\bDMG\s+Bonus$", name, re.IGNORECASE):
+        return name
+    if re.search(r"\bDMG$", name, re.IGNORECASE):
+        return f"{name} Bonus"
+    return f"{name} DMG Bonus"
+
+def clean_echo_substat_name_lines(lines: list[str]) -> list[str]:
+    """Merge OCR-wrapped echo substat names before pairing them with values."""
+    cleaned_names: list[str] = []
+
+    for raw_line in lines:
+        line = re.sub(r"\s+", " ", raw_line.strip())
+        if not line:
+            continue
+
+        fragment = _canonical_stat_fragment(line)
+        if cleaned_names and fragment.startswith("bonus") and len(fragment) <= 8:
+            cleaned_names[-1] = _append_dmg_bonus_suffix(cleaned_names[-1])
+            continue
+        if cleaned_names and fragment.startswith("dmgbonus"):
+            cleaned_names[-1] = _append_dmg_bonus_suffix(cleaned_names[-1])
+            continue
+        if cleaned_names and fragment.startswith("dmg") and "bonus" in fragment:
+            cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
+            continue
+
+        cleaned_line = line
+        if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
+            cleaned_line = f"{cleaned_line} Bonus"
+        cleaned_names.append(cleaned_line)
+
+    return cleaned_names
+
 def process_card(image, region: str):
     if image is None:
         return {"success": False, "error": "No image data provided"}
@@ -592,34 +629,12 @@ def process_card(image, region: str):
             names_lines = [l.strip() for l in pytesseract.image_to_string(names_processed).splitlines() if l.strip()]
             tess_values = [l.strip() for l in pytesseract.image_to_string(values_processed).splitlines() if l.strip()]
             
-            # First clean out invalid bonus lines (including OCR-truncated variants like "onus")
-            bonus_fragment = re.compile(r'^\.?[Bb]?onus\.?$')
-            names_lines = [line for line in names_lines
-                            if not bonus_fragment.fullmatch(line.strip())
-                            and not ("Bonus" in line and len(line.split()) < 3)]
-            
             # Use Rapid if not exactly 5 entries
             if len(names_lines) < 5:
                 rapid_result, _ = Rapid(names_img)
                 names_lines = [text for _, text, _ in rapid_result] if rapid_result else names_lines
                 
-            # Process names - combine DMG lines
-            cleaned_names = []
-            for i, line in enumerate(names_lines):
-                # Combine if line is "Bonus", "DMGBonus", or starts with "DMG"
-                if (line == "Bonus" or line == "DMGBonus" or line.startswith("DMG")) and cleaned_names:
-                    if line == "Bonus":
-                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
-                    elif line == "DMGBonus":
-                        cleaned_names[-1] = f"{cleaned_names[-1]} DMG Bonus"
-                    else:  # starts with "DMG"
-                        cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
-                else:
-                    cleaned_line = line.strip()
-                    # Preserve old behavior: add "Bonus" to lines ending with "DMG" (except Crit)
-                    if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
-                        cleaned_line = f"{cleaned_line} Bonus"
-                    cleaned_names.append(cleaned_line)
+            cleaned_names = clean_echo_substat_name_lines(names_lines)
 
             rapid_values = []
             values_lines = tess_values
