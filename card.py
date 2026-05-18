@@ -3,7 +3,7 @@ import pytesseract
 import re
 from data import CHARACTER_NAMES, CHARACTER_ID_MAP, WEAPON_NAMES, WEAPON_ID_MAP, MAIN_STAT_NAMES, MAIN_STATS, DEFAULT_MAIN_STATS, SUB_STATS, ECHO_ELEMENTS, ECHO_COSTS, ECHO_NAME_MAP, TEMPLATE_FEATURES, COST_TEMPLATES, Rapid, determine_element
 import numpy as np
-from rapidfuzz import process
+from rapidfuzz import fuzz, process
 from typing import Tuple
 from cv2 import SIFT_create, FlannBasedMatcher
 import io
@@ -537,19 +537,25 @@ def parse_sequence_region(image) -> int:
     
     return active_count
 
-def merge_stat_lines(names: list, values: list) -> str:
-    """Merge stat names with their values"""
-    return "\n".join(f"{name} {value}" for name, value in zip(names, values))
-
 def _canonical_stat_fragment(line: str) -> str:
     return re.sub(r"[^a-z]", "", line.lower())
 
-def _append_dmg_bonus_suffix(name: str) -> str:
+def _ensure_dmg_bonus_suffix(name: str) -> str:
     if re.search(r"\bDMG\s+Bonus$", name, re.IGNORECASE):
         return name
     if re.search(r"\bDMG$", name, re.IGNORECASE):
         return f"{name} Bonus"
     return f"{name} DMG Bonus"
+
+_CAN_MERGE_DMG_BONUS_CONTINUATIONS = not any(
+    fragment.startswith(("dmg", "bonus"))
+    for fragment in (_canonical_stat_fragment(name) for name in SUB_STATS)
+)
+
+def _line_with_implied_bonus(line: str, fragment: str) -> str:
+    if fragment.endswith("dmg") and not fragment.startswith("crit") and "bonus" not in fragment:
+        return f"{line} Bonus"
+    return line
 
 def clean_echo_substat_name_lines(lines: list[str]) -> list[str]:
     """Merge OCR-wrapped echo substat names before pairing them with values."""
@@ -561,14 +567,19 @@ def clean_echo_substat_name_lines(lines: list[str]) -> list[str]:
             continue
 
         fragment = _canonical_stat_fragment(line)
-        if cleaned_names and (fragment.startswith("dmg") or fragment.startswith("bonus")):
-            cleaned_names[-1] = _append_dmg_bonus_suffix(cleaned_names[-1])
+        is_wrapped_dmg_bonus_line = (
+            _CAN_MERGE_DMG_BONUS_CONTINUATIONS
+            and (
+                fragment.startswith(("dmg", "bonus"))
+                or (len(fragment) <= 8 and fuzz.ratio(fragment, "bonus") >= 75)
+                or (len(fragment) <= 12 and fuzz.ratio(fragment, "dmgbonus") >= 75)
+            )
+        )
+        if cleaned_names and is_wrapped_dmg_bonus_line:
+            cleaned_names[-1] = _ensure_dmg_bonus_suffix(cleaned_names[-1])
             continue
-        # The second line for liberation or skill starts with DMG or Bonus but can get misread
-        cleaned_line = line
-        if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
-            cleaned_line = f"{cleaned_line} Bonus"
-        cleaned_names.append(cleaned_line)
+
+        cleaned_names.append(_line_with_implied_bonus(line, fragment))
 
     return cleaned_names
 
