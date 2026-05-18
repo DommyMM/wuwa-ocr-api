@@ -561,16 +561,10 @@ def clean_echo_substat_name_lines(lines: list[str]) -> list[str]:
             continue
 
         fragment = _canonical_stat_fragment(line)
-        if cleaned_names and fragment.startswith("bonus") and len(fragment) <= 8:
+        if cleaned_names and (fragment.startswith("dmg") or fragment.startswith("bonus")):
             cleaned_names[-1] = _append_dmg_bonus_suffix(cleaned_names[-1])
             continue
-        if cleaned_names and fragment.startswith("dmgbonus"):
-            cleaned_names[-1] = _append_dmg_bonus_suffix(cleaned_names[-1])
-            continue
-        if cleaned_names and fragment.startswith("dmg") and "bonus" in fragment:
-            cleaned_names[-1] = f"{cleaned_names[-1]} {line}"
-            continue
-
+        # The second line for liberation or skill starts with DMG or Bonus but can get misread
         cleaned_line = line
         if cleaned_line.endswith("DMG") and not cleaned_line.startswith("Crit") and "Bonus" not in cleaned_line:
             cleaned_line = f"{cleaned_line} Bonus"
